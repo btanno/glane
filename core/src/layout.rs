@@ -1,30 +1,124 @@
 use super::*;
 use std::collections::VecDeque;
+use std::ops::Range;
 
 #[derive(Clone, Debug)]
-pub struct LayoutElement {
+pub struct Area {
     pub handle: AnyHandle,
+    pub widget_state: WidgetState,
     pub rect: LogicalRect<f32>,
-    pub z: f32,
-    pub string: Option<String>,
-    pub state: WidgetState,
+}
+
+#[derive(Clone, Debug)]
+pub struct Text {
+    pub handle: AnyHandle,
+    pub widget_state: WidgetState,
+    pub rect: LogicalRect<f32>,
+    pub string: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct CompositionText {
+    pub handle: AnyHandle,
+    pub widget_state: WidgetState,
+    pub rect: LogicalRect<f32>,
+    pub string: String,
+    pub targeted: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct Cursor {
+    pub handle: AnyHandle,
+    pub widget_state: WidgetState,
+    pub rect: LogicalRect<f32>,
+}
+
+#[derive(Clone, Debug)]
+pub enum LayoutElement {
+    Area(Area),
+    Text(Text),
+    CompositionText(CompositionText),
+    Cursor(Cursor),
 }
 
 impl LayoutElement {
     #[inline]
-    pub fn new(
-        handle: AnyHandle,
-        rect: LogicalRect<f32>,
-        z: f32,
-        string: Option<String>,
-        state: WidgetState,
-    ) -> Self {
-        Self {
-            handle,
+    pub fn area(widget: &impl Widget, widget_state: WidgetState, rect: LogicalRect<f32>) -> Self {
+        Self::Area(Area {
+            handle: AnyHandle::new(widget),
+            widget_state,
             rect,
-            z,
+        })
+    }
+
+    #[inline]
+    pub fn text(
+        widget: &impl Widget,
+        widget_state: WidgetState,
+        rect: LogicalRect<f32>,
+        string: String,
+    ) -> Self {
+        Self::Text(Text {
+            handle: AnyHandle::new(widget),
+            widget_state,
+            rect,
             string,
-            state,
+        })
+    }
+
+    #[inline]
+    pub fn composition_text(
+        widget: &impl Widget,
+        widget_state: WidgetState,
+        rect: LogicalRect<f32>,
+        string: String,
+        targeted: bool,
+    ) -> Self {
+        Self::CompositionText(CompositionText {
+            handle: AnyHandle::new(widget),
+            widget_state,
+            rect,
+            string,
+            targeted,
+        })
+    }
+
+    #[inline]
+    pub fn cursor(widget: &impl Widget, widget_state: WidgetState, rect: LogicalRect<f32>) -> Self {
+        Self::Cursor(Cursor {
+            handle: AnyHandle::new(widget),
+            widget_state,
+            rect,
+        })
+    }
+
+    #[inline]
+    pub fn handle(&self) -> AnyHandle {
+        match self {
+            Self::Area(a) => a.handle,
+            Self::Text(t) => t.handle,
+            Self::CompositionText(t) => t.handle,
+            Self::Cursor(c) => c.handle,
+        }
+    }
+
+    #[inline]
+    pub fn widget_state(&self) -> WidgetState {
+        match self {
+            Self::Area(a) => a.widget_state,
+            Self::Text(t) => t.widget_state,
+            Self::CompositionText(t) => t.widget_state,
+            Self::Cursor(c) => c.widget_state,
+        }
+    }
+
+    #[inline]
+    pub fn rect(&self) -> &LogicalRect<f32> {
+        match self {
+            Self::Area(a) => &a.rect,
+            Self::Text(t) => &t.rect,
+            Self::CompositionText(t) => &t.rect,
+            Self::Cursor(c) => &c.rect,
         }
     }
 }
@@ -33,7 +127,6 @@ impl LayoutElement {
 pub struct LayoutContext<'a> {
     pub ctx: &'a Context,
     pub rect: LogicalRect<f32>,
-    pub z: f32,
 }
 
 impl<'a> LayoutContext<'a> {
@@ -41,16 +134,14 @@ impl<'a> LayoutContext<'a> {
         Self {
             ctx,
             rect: LogicalRect::from_position_size(LogicalPosition::new(0.0, 0.0), ctx.viewport),
-            z: 0.0,
         }
     }
 
     #[inline]
-    pub fn next(&self, rect: LogicalRect<f32>, z: f32) -> Self {
+    pub fn next(&self, rect: LogicalRect<f32>) -> Self {
         Self {
             ctx: self.ctx,
             rect,
-            z,
         }
     }
 }
@@ -66,29 +157,13 @@ impl LayoutConstructor {
     }
 
     #[inline]
-    pub fn push_front(
-        &mut self,
-        widget: &impl Widget,
-        rect: LogicalRect<f32>,
-        z: f32,
-        string: Option<String>,
-        state: WidgetState,
-    ) {
-        self.v
-            .push_front(LayoutElement::new(AnyHandle::new(widget), rect, z, string, state));
+    pub fn push_front(&mut self, element: LayoutElement) {
+        self.v.push_front(element);
     }
 
     #[inline]
-    pub fn push_back(
-        &mut self,
-        widget: &impl Widget,
-        rect: LogicalRect<f32>,
-        z: f32,
-        string: Option<String>,
-        state: WidgetState,
-    ) {
-        self.v
-            .push_back(LayoutElement::new(AnyHandle::new(widget), rect, z, string, state));
+    pub fn push_back(&mut self, element: LayoutElement) {
+        self.v.push_back(element);
     }
 
     #[inline]
@@ -132,9 +207,7 @@ impl Layout {
         Self { v: VecDeque::new() }
     }
 
-    pub(crate) fn new(_ctx: &Context, mut c: LayoutConstructor) -> Self {
-        let v = c.v.make_contiguous();
-        v.sort_by(|a, b| a.z.partial_cmp(&b.z).unwrap_or(std::cmp::Ordering::Less));
+    pub(crate) fn new(_ctx: &Context, c: LayoutConstructor) -> Self {
         Self { v: c.v }
     }
 

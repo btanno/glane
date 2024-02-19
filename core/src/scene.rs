@@ -17,7 +17,7 @@ impl Context {
         widget: &impl Widget,
     ) -> impl Iterator<Item = &'a LayoutElement> + 'a {
         let id = widget.id();
-        self.layout.iter().filter(move |l| l.handle.id() == id)
+        self.layout.iter().filter(move |l| l.handle().id() == id)
     }
 }
 

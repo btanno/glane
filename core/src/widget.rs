@@ -1,10 +1,10 @@
 use super::*;
 use std::any::{Any, TypeId};
 
-pub trait Widget: Any {
-    fn id(&self) -> Id;
+pub trait Widget: Any + HasId {
     fn input(&mut self, ctx: &Context, input: &Input, events: &mut Vec<Event>);
     fn apply(&mut self, funcs: &mut ApplyFuncs);
+    fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32>;
     fn layout(&self, ctx: LayoutContext, result: &mut LayoutConstructor);
 }
 
@@ -52,6 +52,16 @@ where
     }
 }
 
+impl<T> HasId for Handle<T>
+where
+    T: Widget,
+{
+    #[inline]
+    fn id(&self) -> Id {
+        self.id
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct AnyHandle {
     id: Id,
@@ -89,6 +99,13 @@ impl AnyHandle {
             id: self.id,
             _t: std::marker::PhantomData,
         })
+    }
+}
+
+impl HasId for AnyHandle {
+    #[inline]
+    fn id(&self) -> Id {
+        self.id
     }
 }
 
@@ -131,3 +148,34 @@ pub enum WidgetState {
     Hover,
     Pressed,
 }
+
+impl WidgetState {
+    pub fn current(rect: &LogicalRect<f32>, mouse_state: &MouseState) -> Self {
+        if rect.contains(&mouse_state.position) {
+            if mouse_state.buttons.contains(MouseButton::Left) {
+                Self::Pressed
+            } else {
+                Self::Hover
+            }
+        } else {
+            Self::None
+        }
+    }
+}
+
+pub trait HasChildren {
+    fn push(&mut self, child: impl Widget);
+    fn erase(&mut self, child: impl HasId);
+}
+
+#[inline]
+pub fn push_child<T, U>(scene: &mut Scene, parent: &Handle<T>, child: U) -> Handle<U>
+where
+    T: Widget + HasChildren,
+    U: Widget,
+{
+    let handle = Handle::new(&child);
+    scene.apply(parent, move |r| r.push(child));
+    handle
+}
+

@@ -26,31 +26,37 @@ impl Label {
     }
 }
 
-impl Widget for Label {
+impl HasId for Label {
+    #[inline]
     fn id(&self) -> Id {
         self.id
     }
+}
 
+impl Widget for Label {
     fn input(&mut self, _ctx: &Context, _input: &Input, _events: &mut Vec<Event>) {}
 
     fn apply(&mut self, funcs: &mut ApplyFuncs) {
         funcs.apply(self);
     }
 
-    fn layout(&self, ctx: LayoutContext, result: &mut LayoutConstructor) {
+    fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
         let font = self
             .style
             .font
             .as_ref()
             .unwrap_or_else(|| ctx.ctx.default_font.as_ref().unwrap());
-        let shape = shape(&font, &self.text);
-        result.push_back(
+        let shape = bounding_box_with_str(&font, &self.text);
+        LogicalSize::new(shape.right - shape.left, shape.bottom - shape.top)
+    }
+
+    fn layout(&self, ctx: LayoutContext, result: &mut LayoutConstructor) {
+        let size = self.size(&ctx);
+        result.push_back(LayoutElement::text(
             self,
-            shape + ctx.rect.left_top(),
-            ctx.z,
-            Some(self.text.clone()),
             WidgetState::None,
-        );
+            LogicalRect::from_position_size(ctx.rect.left_top(), size),
+            self.text.clone(),
+        ));
     }
 }
-

@@ -36,4 +36,5 @@ pub enum Input {
     MouseInput(MouseInput),
     CursorMoved(CursorMoved),
     KeyInput(KeyInput),
+    CharInput(char),
 }

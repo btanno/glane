@@ -52,3 +52,4 @@ where
         self.is_crossing(inner)
     }
 }
+

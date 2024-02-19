@@ -8,3 +8,5 @@ repository.workspace = true
 
 [dependencies]
 glane-core = { path = "../core" }
+rustybuzz = "0.12.1"
+unicode-normalization = "0.1.22"

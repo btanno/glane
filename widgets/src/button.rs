@@ -25,18 +25,20 @@ impl Button {
             text: text.into(),
             style: Style {
                 font: None,
-                padding: LogicalRect::new(5.0, 2.0, 5.0, 2.0),
+                padding: LogicalRect::new(7.0, 3.0, 7.0, 3.0),
             },
             state: WidgetState::None,
         }
     }
 }
 
-impl Widget for Button {
+impl HasId for Button {
     fn id(&self) -> Id {
         self.id
     }
+}
 
+impl Widget for Button {
     fn input(&mut self, ctx: &Context, input: &Input, events: &mut Vec<Event>) {
         let Some(layout) = ctx.find_layout(self).nth(0) else {
             return;
@@ -44,73 +46,24 @@ impl Widget for Button {
         match input {
             Input::MouseInput(m) => {
                 let prev_state = self.state;
-                if contains(&layout.rect, &m.mouse_state.position) {
-                    if m.button == MouseButton::Left {
-                        match m.button_state {
-                            ButtonState::Pressed => {
-                                if prev_state != WidgetState::Pressed {
-                                    events.push(Event::new(
-                                        self,
-                                        StateChanged::new(WidgetState::Pressed, prev_state),
-                                    ));
-                                    self.state = WidgetState::Pressed;
-                                }
-                            }
-                            ButtonState::Released => {
-                                events.push(Event::new(self, Message::Clicked));
-                                if prev_state != WidgetState::Hover {
-                                    events.push(Event::new(
-                                        self,
-                                        StateChanged::new(WidgetState::Hover, prev_state),
-                                    ));
-                                    self.state = WidgetState::Hover;
-                                }
-                            }
-                        }
-                    } else {
-                        if prev_state != WidgetState::None {
-                            events.push(Event::new(
-                                self,
-                                StateChanged::new(WidgetState::None, prev_state),
-                            ));
-                            self.state = WidgetState::None;
-                        }
-                    }
-                } else {
-                    if prev_state != WidgetState::None {
-                        events.push(Event::new(
-                            self,
-                            StateChanged::new(WidgetState::None, prev_state),
-                        ));
-                        self.state = WidgetState::None;
-                    }
+                let state = WidgetState::current(layout.rect(), &m.mouse_state);
+                let clicked = m.button == MouseButton::Left
+                    && m.button_state == ButtonState::Released
+                    && state == WidgetState::Hover;
+                if clicked {
+                    events.push(Event::new(self, Message::Clicked));
+                }
+                if state != prev_state {
+                    events.push(Event::new(self, StateChanged::new(state, prev_state)));
+                    self.state = state;
                 }
             }
             Input::CursorMoved(m) => {
-                let prev = self.state;
-                if contains(&layout.rect, &m.mouse_state.position) {
-                    if m.mouse_state.buttons.contains(MouseButton::Left) {
-                        if prev != WidgetState::Pressed {
-                            events.push(Event::new(
-                                self,
-                                StateChanged::new(WidgetState::Pressed, prev),
-                            ));
-                            self.state = WidgetState::Pressed;
-                        }
-                    } else {
-                        if prev != WidgetState::Hover {
-                            events.push(Event::new(
-                                self,
-                                StateChanged::new(WidgetState::Hover, prev),
-                            ));
-                            self.state = WidgetState::Hover;
-                        }
-                    }
-                } else {
-                    if prev != WidgetState::None {
-                        events.push(Event::new(self, StateChanged::new(WidgetState::None, prev)));
-                        self.state = WidgetState::None;
-                    }
+                let prev_state = self.state;
+                let state = WidgetState::current(layout.rect(), &m.mouse_state);
+                if state != prev_state {
+                    events.push(Event::new(self, StateChanged::new(state, prev_state)));
+                    self.state = state;
                 }
             }
             _ => {}
@@ -121,27 +74,35 @@ impl Widget for Button {
         funcs.apply(self);
     }
 
-    fn layout(&self, ctx: LayoutContext, result: &mut LayoutConstructor) {
+    fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
         let font = self
             .style
             .font
             .as_ref()
             .unwrap_or_else(|| ctx.ctx.default_font.as_ref().unwrap());
-        let rect = ctx.rect.left_top() + shape(&font, &self.text);
-        let rect = LogicalRect::new(
-            rect.left,
-            rect.top,
+        let rect = bounding_box_with_str(&font, &self.text);
+        LogicalSize::new(
             rect.right + self.style.padding.left + self.style.padding.right,
             rect.bottom + self.style.padding.top + self.style.padding.bottom,
-        );
-        result.push_back(self, rect, 0.0, None, self.state);
+        )
+    }
+
+    fn layout(&self, ctx: LayoutContext, result: &mut LayoutConstructor) {
+        let size = self.size(&ctx);
+        let rect = LogicalRect::from_position_size(ctx.rect.left_top(), size);
+        result.push_back(LayoutElement::area(self, self.state, rect));
         let rect = LogicalRect::new(
             rect.left + self.style.padding.left,
             rect.top + self.style.padding.top,
             rect.right - self.style.padding.right,
             rect.bottom - self.style.padding.bottom,
         );
-        result.push_back(self, rect, 0.0, Some(self.text.clone()), self.state);
+        result.push_back(LayoutElement::text(
+            self,
+            self.state,
+            rect,
+            self.text.clone(),
+        ));
     }
 }
 

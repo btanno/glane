@@ -58,9 +58,21 @@ impl Font {
             size,
         }
     }
+
+    #[inline]
+    pub fn bounding_size(&self) -> LogicalSize<f32> {
+        let face = rustybuzz::Face::from_slice(&self.face.data, self.face.index).unwrap();
+        let size = self.size * 96.0 / 72.0;
+        let scale = size / face.units_per_em() as f32;
+        let bounding = face.global_bounding_box();
+        LogicalSize::new(
+            (bounding.x_max - bounding.x_min) as f32 * scale,
+            (bounding.y_max - bounding.y_min) as f32 * scale,
+        )
+    }
 }
 
-pub fn shape(font: &Font, s: &str) -> LogicalRect<f32> {
+pub fn bounding_box_with_str(font: &Font, s: &str) -> LogicalRect<f32> {
     let face = rustybuzz::Face::from_slice(&font.face.data, font.face.index).unwrap();
     let size = font.size * 96.0 / 72.0;
     let scale = size / face.units_per_em() as f32;
@@ -78,8 +90,8 @@ pub fn shape(font: &Font, s: &str) -> LogicalRect<f32> {
         0.0,
         positions
             .iter()
-            .map(|p| p.x_advance as f32 * scale)
-            .sum::<f32>(),
+            .map(|p| p.x_advance as f32)
+            .sum::<f32>() * scale,
         bottom,
     )
 }

@@ -10,3 +10,6 @@ impl Id {
     }
 }
 
+pub trait HasId {
+    fn id(&self) -> Id;
+}
