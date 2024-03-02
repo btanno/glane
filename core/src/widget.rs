@@ -5,7 +5,7 @@ pub trait Widget: Any + HasId {
     fn input(&mut self, ctx: &Context, input: &Input, events: &mut Vec<Event>);
     fn apply(&mut self, funcs: &mut ApplyFuncs);
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32>;
-    fn layout(&self, ctx: LayoutContext, result: &mut LayoutConstructor);
+    fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor);
 }
 
 pub trait WidgetMessage: Widget {
@@ -91,6 +91,11 @@ impl AnyHandle {
     }
 
     #[inline]
+    pub fn is<T: Widget>(&self, other: &T) -> bool {
+        self.id == other.id()
+    }
+
+    #[inline]
     pub fn downcast<T>(&self) -> Option<Handle<T>>
     where
         T: Widget,
@@ -126,6 +131,16 @@ where
     #[inline]
     fn eq(&self, other: &AnyHandle) -> bool {
         self.id == other.id
+    }
+}
+
+impl<T> PartialEq<T> for AnyHandle
+where
+    T: Widget,
+{
+    #[inline]
+    fn eq(&self, other: &T) -> bool {
+        self.id == other.id()
     }
 }
 
@@ -179,3 +194,11 @@ where
     handle
 }
 
+#[inline]
+pub fn erase_child<T, U>(scene: &mut Scene, parent: &Handle<T>, child: Handle<U>)
+where
+    T: Widget + HasChildren,
+    U: Widget,
+{
+    scene.apply(parent, move |r| r.erase(child));
+}

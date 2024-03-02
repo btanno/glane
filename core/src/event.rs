@@ -14,6 +14,9 @@ impl StateChanged {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct SetFocus;
+
 pub struct Event {
     handle: AnyHandle,
     object: Box<dyn Any>,
@@ -57,6 +60,11 @@ impl Event {
             return None;
         }
         self.object.downcast_ref::<StateChanged>()
+    }
+
+    #[inline]
+    pub fn is_set_focus(&self) -> bool {
+        self.object.downcast_ref::<SetFocus>().is_some()
     }
 
     #[inline]

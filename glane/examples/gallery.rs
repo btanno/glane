@@ -68,13 +68,10 @@ impl Canvas {
         let default_font = scene.default_font().unwrap();
         let font_face = default_font.face.clone();
         let font_size = pnte::FontPoint(default_font.size);
-        let text_format = pnte::TextFormat::new(
-            &ctx,
-            pnte::Font::File(&font_face.path, "Yu Gothic UI"),
-            font_size,
-            None,
-            None,
-        )?;
+        let text_format = pnte::TextFormat::new(&ctx)
+            .font(pnte::Font::File(&font_face.path, "Yu Gothic UI"))
+            .size(font_size)
+            .build()?;
         let white = pnte::SolidColorBrush::new(&ctx, (1.0, 1.0, 1.0, 1.0))?;
         let button_bg = pnte::SolidColorBrush::new(&ctx, (0.3, 0.3, 0.3, 1.0))?;
         let button_bg_hover = pnte::SolidColorBrush::new(&ctx, (0.4, 0.4, 0.4, 1.0))?;
@@ -102,6 +99,7 @@ impl Canvas {
             for l in layout.iter() {
                 match l {
                     glane::LayoutElement::Area(_) => {
+                        println!("Area: {:?}", &l.rect());
                         if l.handle().type_id() == self.button_type {
                             let brush = match l.widget_state() {
                                 glane::WidgetState::None => &self.button_bg,
@@ -124,6 +122,7 @@ impl Canvas {
                         }
                     }
                     glane::LayoutElement::Cursor(_) => {
+                        println!("Cursor: {:?}", &l.rect());
                         let rect = l.rect();
                         cmd.fill(
                             &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
@@ -131,14 +130,12 @@ impl Canvas {
                         );
                     }
                     glane::LayoutElement::Text(t) => {
-                        let text = pnte::TextLayout::new(
-                            &self.ctx,
-                            &t.string,
-                            &self.text_format,
-                            pnte::TextAlignment::Center,
-                            None,
-                        )
-                        .unwrap();
+                        println!("{}: {:?}", &t.string, &l.rect());
+                        let text = pnte::TextLayout::new(&self.ctx)
+                            .text(&t.string)
+                            .format(&self.text_format)
+                            .build()
+                            .unwrap();
                         cmd.draw_text(&text, (l.rect().left, l.rect().top), &self.white)
                             .unwrap();
                     }

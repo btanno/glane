@@ -5,9 +5,9 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct Context {
     pub viewport: LogicalSize<f32>,
-    pub focus: Option<AnyHandle>,
     pub layout: Arc<Layout>,
     pub default_font: Option<Font>,
+    focus: Option<AnyHandle>,
 }
 
 impl Context {
@@ -18,6 +18,12 @@ impl Context {
     ) -> impl Iterator<Item = &'a LayoutElement> + 'a {
         let id = widget.id();
         self.layout.iter().filter(move |l| l.handle().id() == id)
+    }
+
+    #[inline]
+    pub fn has_focus<T: Widget>(&self, widget: &T) -> bool {
+        self.focus
+            .map_or(false, |focus| focus == Handle::new(widget))
     }
 }
 
@@ -103,6 +109,14 @@ impl Scene {
         }
         let mut events = vec![];
         self.root.input(&self.ctx, &input, &mut events);
+        if let Input::MouseInput(m) = &input {
+            if m.button_state == ButtonState::Pressed {
+                self.ctx.focus = events
+                    .iter()
+                    .find(|event| event.is_set_focus())
+                    .map(|event| event.handle());
+            }
+        }
         self.prev_input = Some(input);
         events
     }

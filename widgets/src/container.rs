@@ -47,10 +47,10 @@ where
         LogicalSize::new(0.0, 0.0)
     }
 
-    fn layout(&self, ctx: LayoutContext, result: &mut LayoutConstructor) {
+    fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         self.child.layout(
-            ctx.next(
-                LogicalRect::from_positions(self.position, ctx.rect.right_bottom()),
+            lc.next(
+                LogicalRect::from_positions(self.position, lc.rect.right_bottom()),
             ),
             result,
         );
@@ -60,6 +60,7 @@ where
 pub struct Column {
     id: Id,
     children: Vec<Box<dyn Widget>>,
+    pub space: f32,
 }
 
 impl Column {
@@ -68,24 +69,8 @@ impl Column {
         Self {
             id: Id::new(),
             children: vec![],
+            space: 5.0,
         }
-    }
-
-    #[inline]
-    pub fn push(&mut self, widget: impl Widget) {
-        self.children.push(Box::new(widget));
-    }
-
-    #[inline]
-    pub fn erase(&mut self, object: &impl HasId) {
-        let Some(index) = self
-            .children
-            .iter()
-            .position(|child| child.id() == object.id())
-        else {
-            return;
-        };
-        self.children.remove(index);
     }
 }
 
@@ -119,18 +104,18 @@ impl Widget for Column {
         size
     }
 
-    fn layout(&self, ctx: LayoutContext, result: &mut LayoutConstructor) {
-        let mut pt = ctx.rect.left_top();
-        let size = self.size(&ctx);
+    fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
+        let mut pt = lc.rect.left_top();
+        let size = self.size(&lc);
         for child in self.children.iter() {
-            let s = child.size(&ctx);
+            let s = child.size(&lc);
             child.layout(
-                ctx.next(
+                lc.next(
                     LogicalRect::from_position_size(pt, LogicalSize::new(size.width, s.height)),
                 ),
                 result,
             );
-            pt.y += s.height;
+            pt.y += s.height + self.space;
         }
     }
 }
@@ -155,6 +140,7 @@ impl HasChildren for Column {
 pub struct Row {
     id: Id,
     children: Vec<Box<dyn Widget>>,
+    pub space: f32,
 }
 
 impl Row {
@@ -163,19 +149,8 @@ impl Row {
         Self {
             id: Id::new(),
             children: vec![],
+            space: 5.0,
         }
-    }
-
-    #[inline]
-    pub fn erase(&mut self, object: &impl HasId) {
-        let Some(index) = self
-            .children
-            .iter()
-            .position(|child| child.id() == object.id())
-        else {
-            return;
-        };
-        self.children.remove(index);
     }
 }
 
@@ -209,19 +184,19 @@ impl Widget for Row {
         size
     }
 
-    fn layout(&self, ctx: LayoutContext, result: &mut LayoutConstructor) {
-        let mut pt = ctx.rect.left_top();
-        let size = self.size(&ctx);
+    fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
+        let mut pt = lc.rect.left_top();
+        let size = self.size(&lc);
         for child in self.children.iter() {
-            let s = child.size(&ctx);
+            let s = child.size(&lc);
             child.layout(
-                ctx.next(LogicalRect::from_position_size(
+                lc.next(LogicalRect::from_position_size(
                     pt,
                     LogicalSize::new(s.width, size.height),
                 )),
                 result,
             );
-            pt.x += s.width;
+            pt.x += s.width + self.space;
         }
     }
 }

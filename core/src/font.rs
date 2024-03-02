@@ -30,7 +30,8 @@ impl FontFace {
     #[inline]
     pub fn from_os_default() -> std::io::Result<Arc<Self>> {
         if cfg!(windows) {
-            Self::from_file("C:\\Windows\\Fonts\\YuGothM.ttc", 0)
+            // Yu Gothic UI
+            Self::from_file("C:\\Windows\\Fonts\\YuGothM.ttc", 1)
         } else {
             Err(std::io::ErrorKind::NotFound.into())
         }
@@ -60,7 +61,7 @@ impl Font {
     }
 
     #[inline]
-    pub fn bounding_size(&self) -> LogicalSize<f32> {
+    pub fn global_bounding_size(&self) -> LogicalSize<f32> {
         let face = rustybuzz::Face::from_slice(&self.face.data, self.face.index).unwrap();
         let size = self.size * 96.0 / 72.0;
         let scale = size / face.units_per_em() as f32;

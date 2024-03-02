@@ -50,12 +50,12 @@ impl Widget for Label {
         LogicalSize::new(shape.right - shape.left, shape.bottom - shape.top)
     }
 
-    fn layout(&self, ctx: LayoutContext, result: &mut LayoutConstructor) {
-        let size = self.size(&ctx);
+    fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
+        let size = self.size(&lc);
         result.push_back(LayoutElement::text(
             self,
             WidgetState::None,
-            LogicalRect::from_position_size(ctx.rect.left_top(), size),
+            LogicalRect::from_position_size(lc.rect.left_top(), size),
             self.text.clone(),
         ));
     }

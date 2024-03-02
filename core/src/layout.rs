@@ -1,6 +1,5 @@
 use super::*;
 use std::collections::VecDeque;
-use std::ops::Range;
 
 #[derive(Clone, Debug)]
 pub struct Area {
@@ -214,5 +213,15 @@ impl Layout {
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &LayoutElement> {
         self.v.iter()
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.v.is_empty()
+    }
+    
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.v.len()
     }
 }
