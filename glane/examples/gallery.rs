@@ -69,7 +69,10 @@ impl Canvas {
         let font_face = default_font.face.clone();
         let font_size = pnte::FontPoint(default_font.size);
         let text_format = pnte::TextFormat::new(&ctx)
-            .font(pnte::Font::File(&font_face.path, "Yu Gothic UI"))
+            .font(pnte::Font::File(
+                font_face.font_file().path(),
+                font_face.font_family_name(),
+            ))
             .size(font_size)
             .build()?;
         let white = pnte::SolidColorBrush::new(&ctx, (1.0, 1.0, 1.0, 1.0))?;

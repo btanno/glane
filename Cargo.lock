@@ -130,6 +130,7 @@ dependencies = [
  "num",
  "rustybuzz",
  "sys-locale",
+ "ttf-parser",
 ]
 
 [[package]]

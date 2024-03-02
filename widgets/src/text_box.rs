@@ -13,7 +13,7 @@ impl Default for Style {
         Self {
             font: None,
             width: None,
-            padding: LogicalRect::new(0.5, 0.3, 0.5, 0.3),
+            padding: LogicalRect::new(5.0, 3.0, 5.0, 3.0),
         }
     }
 }
@@ -93,9 +93,7 @@ impl Widget for TextBox {
                 }
             }
             Input::ImeBeginComposition => {}
-            Input::ImeUpdateComposition(clauses) => {
-                self.composition_text = clauses.clone();
-            }
+            Input::ImeUpdateComposition(clauses) => {}
             Input::ImeEndComposition(Some(result)) => {
                 if ctx.has_focus(self) {
                     self.front_text
@@ -120,12 +118,6 @@ impl Widget for TextBox {
         let text = self
             .front_text
             .iter()
-            .chain(
-                self.composition_text
-                    .iter()
-                    .map(|t| t.string.iter())
-                    .flatten(),
-            )
             .chain(self.back_text.iter())
             .collect::<String>();
         let rect = bounding_box_with_str(&font, &text);
@@ -161,20 +153,20 @@ impl Widget for TextBox {
             .unwrap_or_else(|| lc.ctx.default_font.as_ref().unwrap());
         let mut rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
         result.push_back(LayoutElement::area(self, self.widget_state, rect));
-        rect.left -= self.style.padding.left;
-        rect.top -= self.style.padding.top;
-        rect.right += self.style.padding.right;
-        rect.bottom += self.style.padding.bottom;
+        rect.left += self.style.padding.left;
+        rect.top += self.style.padding.top;
+        rect.right -= self.style.padding.right;
+        rect.bottom -= self.style.padding.bottom;
+        let front_text = self.front_text.iter().collect::<String>();
+        let front_rect = bounding_box_with_str(&font, &front_text);
+        rect = LogicalRect::from_position_size(
+            LogicalPosition::new(rect.left, rect.top),
+            LogicalSize::new(
+                front_rect.right - front_rect.left,
+                front_rect.bottom - front_rect.top,
+            ),
+        );
         if !self.front_text.is_empty() {
-            let front_text = self.front_text.iter().collect::<String>();
-            let front_rect = bounding_box_with_str(&font, &front_text);
-            rect = LogicalRect::from_position_size(
-                LogicalPosition::new(rect.left, rect.top),
-                LogicalSize::new(
-                    front_rect.right - front_rect.left,
-                    front_rect.bottom - front_rect.top,
-                ),
-            );
             result.push_back(LayoutElement::text(
                 self,
                 self.widget_state,
@@ -183,20 +175,6 @@ impl Widget for TextBox {
             ));
         }
         if lc.ctx.has_focus(self) {
-            self.composition_text
-                .iter()
-                .map(|t| {
-                    let s = t.string.iter().collect::<String>();
-                    let b = bounding_box_with_str(&font, &s);
-                    rect = LogicalRect::from_position_size(
-                        LogicalPosition::new(rect.right, rect.top),
-                        LogicalSize::new(b.right - b.left, b.bottom - b.top),
-                    );
-                    LayoutElement::composition_text(self, self.widget_state, rect, s, t.targeted)
-                })
-                .for_each(|elem| {
-                    result.push_back(elem);
-                });
             let cursor_rect = LogicalRect::from_position_size(
                 LogicalPosition::new(rect.right, rect.top),
                 LogicalSize::new(2.0, rect.bottom - rect.top),
