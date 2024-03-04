@@ -170,7 +170,7 @@ impl Canvas {
 
 fn main() -> anyhow::Result<()> {
     unsafe {
-        CoInitializeEx(None, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE)?;
+        CoInitializeEx(None, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE).ok()?;
     }
     let mut event_rx = wiard::EventReceiver::new();
     let window = wiard::Window::builder(&event_rx)

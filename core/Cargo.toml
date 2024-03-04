@@ -7,9 +7,9 @@ description.workspace = true
 repository.workspace = true
 
 [dependencies]
-gedv = { version = "0.2.0", features = ["serde"] }
-num = "0.4.1"
-rustybuzz = "0.12.1"
-sys-locale = "0.3.1"
-ttf-parser = "0.20.0"
+gedv = { version = "0.2", features = ["serde"] }
+num = "0.4"
+rustybuzz = "0.12"
+sys-locale = "0.3"
+ttf-parser = "0.20"
 

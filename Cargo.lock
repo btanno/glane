@@ -118,9 +118,9 @@ checksum = "a2ef034f05691a48569bd920a96c81b9d91bbad1ab5ac7c4616c1f6ef36cb79f"
 
 [[package]]
 name = "cc"
-version = "1.0.88"
+version = "1.0.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02f341c093d19155a6e41631ce5971aac4e9a868262212153124c15fa22d1cdc"
+checksum = "a0ba8f7aaa012f30d5b2861462f6708eccd49c3c39863fe083a308035f63d723"
 
 [[package]]
 name = "cfg-if"
@@ -159,13 +159,13 @@ dependencies = [
 
 [[package]]
 name = "gedv"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c582e987927080c7e2676fe7677e1b00b78f1c48f6522b94c68111b8f53a69f"
+checksum = "e36dd1af9b4d0fb705bd60be63056f5e37874ea9101dc6870c2f458c5114aa41"
 dependencies = [
  "num",
  "serde",
- "windows 0.53.0",
+ "windows",
 ]
 
 [[package]]
@@ -183,7 +183,7 @@ dependencies = [
  "glane-widgets",
  "pnte",
  "wiard",
- "windows 0.52.0",
+ "windows",
 ]
 
 [[package]]
@@ -334,13 +334,13 @@ checksum = "8afb450f006bf6385ca15ef45d71d2288452bc3683ce2e2cacc0d18e4be60b58"
 
 [[package]]
 name = "pnte"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48e583a5ff8434757a73b14d8e236c727ec16a4c2d18199eafd39fe922be4101"
+checksum = "bdbc8a6b2e205d5973ff8fa5801130d36df48242586ce092437bd0fa3b2a3718"
 dependencies = [
  "raw-window-handle",
  "thiserror",
- "windows 0.53.0",
+ "windows",
 ]
 
 [[package]]
@@ -381,9 +381,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.4.5"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5bb987efffd3c6d0d8f5f89510bb458559eab11e4f869acb20bf845e016259cd"
+checksum = "86b83b8b9847f9bf95ef68afb0b8e6cdb80f498442f5179a29fad448fcc1eaea"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -562,9 +562,9 @@ checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
 
 [[package]]
 name = "wiard"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e9114510ed9769ffadc20b0ae882569983a5876f07a1114e69a29cb28e7d5ff"
+checksum = "ad6a44d98f6a728953573273038d6f0fee2039e96854b1d0dde54cf0efea783a"
 dependencies = [
  "anyhow",
  "env_logger",
@@ -574,26 +574,16 @@ dependencies = [
  "raw-window-handle",
  "thiserror",
  "tokio",
- "windows 0.53.0",
+ "windows",
 ]
 
 [[package]]
 name = "windows"
-version = "0.52.0"
+version = "0.54.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e48a53791691ab099e5e2ad123536d0fff50652600abaf43bbf952894110d0be"
+checksum = "9252e5725dbed82865af151df558e754e4a3c2c30818359eb17465f1346a1b49"
 dependencies = [
- "windows-core 0.52.0",
- "windows-targets",
-]
-
-[[package]]
-name = "windows"
-version = "0.53.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "efc5cf48f83140dcaab716eeaea345f9e93d0018fb81162753a3f76c3397b538"
-dependencies = [
- "windows-core 0.53.0",
+ "windows-core",
  "windows-implement",
  "windows-interface",
  "windows-targets",
@@ -601,18 +591,9 @@ dependencies = [
 
 [[package]]
 name = "windows-core"
-version = "0.52.0"
+version = "0.54.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33ab640c8d7e35bf8ba19b884ba838ceb4fba93a4e8c65a9059d08afcfc683d9"
-dependencies = [
- "windows-targets",
-]
-
-[[package]]
-name = "windows-core"
-version = "0.53.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dcc5b895a6377f1ab9fa55acedab1fd5ac0db66ad1e6c7f47e28a22e446a5dd"
+checksum = "12661b9c89351d684a50a8a643ce5f608e20243b9fb84687800163429f161d65"
 dependencies = [
  "windows-result",
  "windows-targets",
