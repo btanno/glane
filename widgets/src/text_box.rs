@@ -20,8 +20,8 @@ impl Default for Style {
 
 #[derive(Clone, Debug)]
 pub enum Message {
-    GetFocus,
     Changed,
+    PositionNotify(LogicalPosition<f32>),
 }
 
 pub struct TextBox {
@@ -30,7 +30,7 @@ pub struct TextBox {
     style: Style,
     front_text: Vec<char>,
     back_text: Vec<char>,
-    composition_text: Vec<Clause>,
+    composition: Option<Composition>,
 }
 
 impl TextBox {
@@ -42,7 +42,7 @@ impl TextBox {
             style: Style::default(),
             front_text: vec![],
             back_text: vec![],
-            composition_text: vec![],
+            composition: None,
         }
     }
 }
@@ -86,20 +86,32 @@ impl Widget for TextBox {
                         '\x08' => {
                             self.front_text.pop();
                         }
+                        _ if c.is_control() => {}
                         _ => {
                             self.front_text.extend(c.nfc());
                         }
                     }
                 }
             }
-            Input::ImeBeginComposition => {}
-            Input::ImeUpdateComposition(clauses) => {}
-            Input::ImeEndComposition(Some(result)) => {
-                if ctx.has_focus(self) {
-                    self.front_text
-                        .append(&mut result.chars().collect::<Vec<_>>());
+            Input::ImeBeginComposition => {
+                if let Some(l) = ctx.find_layout(self).next() {
+                    events.push(Event::new(
+                        self,
+                        Message::PositionNotify(l.rect().left_bottom()),
+                    ));
                 }
-                self.composition_text.clear();
+            }
+            Input::ImeUpdateComposition(composition) => {
+                self.composition = Some(composition.clone());
+            }
+            Input::ImeEndComposition(result) => {
+                if ctx.has_focus(self) {
+                    if let Some(result) = result {
+                        self.front_text
+                            .append(&mut result.chars().collect::<Vec<_>>());
+                    }
+                }
+                self.composition = None;
             }
             _ => {}
         }
@@ -118,6 +130,12 @@ impl Widget for TextBox {
         let text = self
             .front_text
             .iter()
+            .chain(
+                self.composition
+                    .iter()
+                    .map(|comp| comp.chars.iter())
+                    .flatten(),
+            )
             .chain(self.back_text.iter())
             .collect::<String>();
         let rect = bounding_box_with_str(&font, &text);
@@ -175,17 +193,63 @@ impl Widget for TextBox {
             ));
         }
         if lc.ctx.has_focus(self) {
-            let cursor_rect = LogicalRect::from_position_size(
-                LogicalPosition::new(rect.right, rect.top),
-                LogicalSize::new(2.0, rect.bottom - rect.top),
-            );
-            result.push_back(LayoutElement::cursor(self, self.widget_state, cursor_rect));
+            if let Some(ref composition) = self.composition {
+                for clause in composition.clauses.iter() {
+                    let text = composition.chars[clause.range.start..clause.range.end]
+                        .iter()
+                        .collect::<String>();
+                    let text_rect = bounding_box_with_str(&font, &text);
+                    rect = LogicalRect::from_position_size(
+                        LogicalPosition::new(rect.right, rect.top),
+                        LogicalSize::new(
+                            text_rect.right - text_rect.left,
+                            text_rect.bottom - text_rect.top,
+                        ),
+                    );
+                    result.push_back(LayoutElement::composition_text(
+                        self,
+                        self.widget_state,
+                        rect,
+                        text,
+                        clause.targeted,
+                    ));
+                }
+                let text_rect = if let Some(clause) =
+                    composition.clauses.iter().find(|clause| clause.targeted)
+                {
+                    let text = composition.chars[..clause.range.end]
+                        .iter()
+                        .collect::<String>();
+                    bounding_box_with_str(&font, &text)
+                } else if composition.cursor_position == 0 {
+                    LogicalRect::new(0.0, rect.top, 0.0, rect.bottom)
+                } else {
+                    let text = composition.chars[..composition.cursor_position]
+                        .iter()
+                        .collect::<String>();
+                    bounding_box_with_str(&font, &text)
+                };
+                let cursor_rect = LogicalRect::from_position_size(
+                    LogicalPosition::new(
+                        lc.rect.left + self.style.padding.left + front_rect.right + text_rect.right,
+                        rect.top,
+                    ),
+                    LogicalSize::new(2.0, rect.bottom - rect.top),
+                );
+                result.push_back(LayoutElement::cursor(self, self.widget_state, cursor_rect));
+            } else {
+                let cursor_rect = LogicalRect::from_position_size(
+                    LogicalPosition::new(rect.right, rect.top),
+                    LogicalSize::new(2.0, rect.bottom - rect.top),
+                );
+                result.push_back(LayoutElement::cursor(self, self.widget_state, cursor_rect));
+            }
         }
         if !self.back_text.is_empty() {
             let back_text = self.back_text.iter().collect::<String>();
             let back_rect = bounding_box_with_str(&font, &back_text);
             rect = LogicalRect::from_position_size(
-                LogicalPosition::new(rect.left, rect.top),
+                LogicalPosition::new(rect.right, rect.top),
                 LogicalSize::new(
                     back_rect.right - back_rect.left,
                     back_rect.bottom - back_rect.top,

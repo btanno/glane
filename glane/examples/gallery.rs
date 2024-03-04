@@ -142,7 +142,25 @@ impl Canvas {
                         cmd.draw_text(&text, (l.rect().left, l.rect().top), &self.white)
                             .unwrap();
                     }
-                    _ => {}
+                    glane::LayoutElement::CompositionText(t) => {
+                        let text = pnte::TextLayout::new(&self.ctx)
+                            .text(&t.string)
+                            .format(&self.text_format)
+                            .build()
+                            .unwrap();
+                        cmd.draw_text(&text, (l.rect().left, l.rect().top), &self.white)
+                            .unwrap();
+                        let width = if t.targeted { 2.0 } else { 1.0 };
+                        cmd.stroke(
+                            &pnte::Line::new(
+                                (l.rect().left + 1.0, l.rect().bottom),
+                                (l.rect().right - 1.0, l.rect().bottom),
+                            ),
+                            &self.white,
+                            width,
+                            None,
+                        );
+                    }
                 }
             }
         })?;
@@ -192,9 +210,7 @@ fn main() -> anyhow::Result<()> {
                             glane::widgets::text_box::Message::Changed => {
                                 println!("text_box changed");
                             }
-                            glane::widgets::text_box::Message::GetFocus => {
-                                println!("text_box get focus");
-                            }
+                            _ => {}
                         }
                     }
                 }
@@ -230,12 +246,34 @@ fn main() -> anyhow::Result<()> {
                 window.redraw(None);
             }
             wiard::Event::ImeBeginComposition(ev) => {
+                let events = scene.input(glane::Input::ImeBeginComposition);
+                if let Some(event) = events.iter().find_map(|event| event.message(&text_box)) {
+                    if let glane::widgets::text_box::Message::PositionNotify(position) = event {
+                        ev.set_position(wiard::LogicalPosition::new(
+                            position.x as i32,
+                            position.y as i32,
+                        ));
+                    }
+                }
                 window.redraw(None);
             }
             wiard::Event::ImeUpdateComposition(ev) => {
+                scene.input(glane::Input::ImeUpdateComposition(glane::Composition {
+                    chars: ev.chars,
+                    clauses: ev
+                        .clauses
+                        .into_iter()
+                        .map(|clause| glane::Clause {
+                            range: clause.range,
+                            targeted: clause.targeted,
+                        })
+                        .collect(),
+                    cursor_position: ev.cursor_position,
+                }));
                 window.redraw(None);
             }
             wiard::Event::ImeEndComposition(ev) => {
+                scene.input(glane::Input::ImeEndComposition(ev.result));
                 window.redraw(None);
             }
             wiard::Event::Draw(_) => {

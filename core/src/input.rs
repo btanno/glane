@@ -33,12 +33,12 @@ pub struct KeyInput {
 
 #[derive(Clone, Debug)]
 pub struct Clause {
-    pub range: std::ops::Range<f32>,
+    pub range: std::ops::Range<usize>,
     pub targeted: bool,
 }
 
 #[derive(Clone, Debug)]
-pub struct ImeUpdateComposition {
+pub struct Composition {
     pub chars: Vec<char>,
     pub clauses: Vec<Clause>,
     pub cursor_position: usize,
@@ -51,6 +51,6 @@ pub enum Input {
     KeyInput(KeyInput),
     CharInput(char),
     ImeBeginComposition,
-    ImeUpdateComposition(ImeUpdateComposition),
+    ImeUpdateComposition(Composition),
     ImeEndComposition(Option<String>),
 }
