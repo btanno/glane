@@ -69,7 +69,7 @@ impl Column {
         Self {
             id: Id::new(),
             children: vec![],
-            space: 5.0,
+            space: 10.0,
         }
     }
 }
@@ -149,7 +149,7 @@ impl Row {
         Self {
             id: Id::new(),
             children: vec![],
-            space: 5.0,
+            space: 10.0,
         }
     }
 }
@@ -189,9 +189,10 @@ impl Widget for Row {
         let size = self.size(&lc);
         for child in self.children.iter() {
             let s = child.size(&lc);
+            let h = (size.height - s.height) / 2.0;
             child.layout(
                 lc.next(LogicalRect::from_position_size(
-                    pt,
+                    LogicalPosition::new(pt.x, pt.y + h),
                     LogicalSize::new(s.width, size.height),
                 )),
                 result,
