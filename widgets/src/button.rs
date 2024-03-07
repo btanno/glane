@@ -1,5 +1,6 @@
 use super::*;
 
+#[derive(Debug)]
 pub struct Style {
     pub font: Option<Font>,
     pub padding: LogicalRect<f32>,
