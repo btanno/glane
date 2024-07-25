@@ -94,7 +94,10 @@ impl Widget for TextBox {
                 }
             }
             Input::ImeBeginComposition => {
-                if let Some(l) = ctx.find_layout(self).next() {
+                let cursor = ctx
+                    .find_layout(self)
+                    .find(|layout| matches!(layout, LayoutElement::Cursor(_)));
+                if let Some(l) = cursor {
                     events.push(Event::new(
                         self,
                         Message::PositionNotify(l.rect().left_bottom()),
