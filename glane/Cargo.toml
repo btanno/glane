@@ -14,8 +14,4 @@ glane-widgets = { path = "../widgets" }
 anyhow = "1.0"
 pnte = "0.2"
 wiard = "0.1"
-windows = { version = "0.54", features = [
-    "Win32_Foundation",
-    "Win32_System_Com",
-] }
 
