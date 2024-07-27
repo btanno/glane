@@ -1,5 +1,7 @@
 use glane::ToLogical;
 use std::any::TypeId;
+use std::cell::Cell;
+use std::rc::Rc;
 
 fn mouse_buttons(src: &wiard::MouseButtons) -> glane::MouseButtons {
     let mut dest = glane::MouseButtons::new();
@@ -51,8 +53,12 @@ struct Canvas {
     button_bg_hover: pnte::SolidColorBrush,
     button_bg_pressed: pnte::SolidColorBrush,
     text_box_border: pnte::SolidColorBrush,
+    scroll_bar_bg: pnte::SolidColorBrush,
+    scroll_bar_thumb: pnte::SolidColorBrush,
     button_type: TypeId,
     text_box_type: TypeId,
+    scroll_bar_type: TypeId,
+    scroll_bar_thumb_type: TypeId,
 }
 
 impl Canvas {
@@ -77,8 +83,12 @@ impl Canvas {
         let button_bg_hover = pnte::SolidColorBrush::new(&ctx, (0.4, 0.4, 0.4, 1.0))?;
         let button_bg_pressed = pnte::SolidColorBrush::new(&ctx, (0.6, 0.6, 0.6, 1.0))?;
         let text_box_border = pnte::SolidColorBrush::new(&ctx, (0.3, 0.3, 0.3, 1.0))?;
+        let scroll_bar_bg = pnte::SolidColorBrush::new(&ctx, (0.3, 0.3, 0.3, 1.0))?;
+        let scroll_bar_thumb = pnte::SolidColorBrush::new(&ctx, (0.8, 0.8, 0.8, 1.0))?;
         let button_type = TypeId::of::<glane::widgets::Button>();
         let text_box_type = TypeId::of::<glane::widgets::TextBox>();
+        let scroll_bar_type = TypeId::of::<glane::widgets::ScrollBar>();
+        let scroll_bar_thumb_type = TypeId::of::<glane::widgets::scroll_bar::Thumb>();
         Ok(Self {
             ctx,
             render_target,
@@ -88,8 +98,12 @@ impl Canvas {
             button_bg_hover,
             button_bg_pressed,
             text_box_border,
+            scroll_bar_bg,
+            scroll_bar_thumb,
             button_type,
             text_box_type,
+            scroll_bar_type,
+            scroll_bar_thumb_type,
         })
     }
 
@@ -99,7 +113,6 @@ impl Canvas {
             for l in layout.iter() {
                 match l {
                     glane::LayoutElement::Area(_) => {
-                        println!("Area: {:?}", &l.rect());
                         if l.handle().type_id() == self.button_type {
                             let brush = match l.widget_state() {
                                 glane::WidgetState::None => &self.button_bg,
@@ -119,10 +132,21 @@ impl Canvas {
                                 2.0,
                                 None,
                             );
+                        } else if l.handle().type_id() == self.scroll_bar_type {
+                            let rect = l.rect();
+                            cmd.fill(
+                                &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                                &self.scroll_bar_bg,
+                            );
+                        } else if l.handle().type_id() == self.scroll_bar_thumb_type {
+                            let rect = l.rect();
+                            cmd.fill(
+                                &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                                &self.scroll_bar_thumb,
+                            );
                         }
                     }
                     glane::LayoutElement::Cursor(_) => {
-                        println!("Cursor: {:?}", &l.rect());
                         let rect = l.rect();
                         cmd.fill(
                             &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
@@ -130,7 +154,6 @@ impl Canvas {
                         );
                     }
                     glane::LayoutElement::Text(t) => {
-                        println!("{}: {:?}", &t.string, &l.rect());
                         let text = pnte::TextLayout::new(&self.ctx)
                             .text(&t.string)
                             .format(&self.text_format)
@@ -172,7 +195,8 @@ fn main() -> anyhow::Result<()> {
         .title("glane gallery")
         .build()?;
     let (mut scene, root) = {
-        let root = glane::widgets::Column::new();
+        let mut root = glane::widgets::Column::new();
+        root.max_height = Some(300.0);
         let handle = glane::Handle::new(&root);
         let scene = glane::Scene::new(root);
         (scene, handle)
@@ -183,7 +207,18 @@ fn main() -> anyhow::Result<()> {
     let row1 = glane::push_child(&mut scene, &root, glane::widgets::Row::new());
     glane::push_child(&mut scene, &row1, glane::widgets::Label::new("TextBox"));
     let text_box = glane::push_child(&mut scene, &row1, glane::widgets::TextBox::new());
+    let row2 = glane::push_child(&mut scene, &root, glane::widgets::Row::new());
+    glane::push_child(&mut scene, &row2, glane::widgets::Label::new("ScrollBar"));
+    let scroll_bar = glane::push_child(&mut scene, &row2, glane::widgets::ScrollBar::new(100, 10));
+    let scroll_bar2 = glane::push_child(&mut scene, &row2, glane::widgets::ScrollBar::new(1000, 10));
     let canvas = Canvas::new(&window, &scene)?;
+    let redrawing = Rc::new(Cell::new(false));
+    let redraw = |window: &wiard::Window| {
+        if !redrawing.get() {
+            window.redraw(None);
+            redrawing.set(true);
+        }
+    };
     loop {
         let Some((event, _)) = event_rx.recv() else {
             break;
@@ -202,14 +237,14 @@ fn main() -> anyhow::Result<()> {
                         }
                     } else if let Some(msg) = event.message(&text_box) {
                         match msg {
-                            glane::widgets::text_box::Message::Changed => {
-                                println!("text_box changed");
+                            glane::widgets::text_box::Message::Changed(s) => {
+                                println!("text_box changed: {s}");
                             }
                             _ => {}
                         }
-                    }
+                    } 
                 }
-                window.redraw(None);
+                redraw(&window);
             }
             wiard::Event::CursorMoved(m) => {
                 let Some(dpi) = window.dpi() else {
@@ -225,8 +260,23 @@ fn main() -> anyhow::Result<()> {
                 let events = scene.input(glane::Input::CursorMoved(glane::CursorMoved {
                     mouse_state,
                 }));
-                if glane::state_changed_exists(&events) {
-                    window.redraw(None);
+                for event in events.iter() {
+                    if let Some(msg) = event.message(&scroll_bar) {
+                        match msg {
+                            glane::widgets::scroll_bar::Message::Changed(p) =>{
+                                println!("scrollbar changed: {p}-{}", p + 10);
+                            }
+                        }
+                    } else if let Some(msg) = event.message(&scroll_bar2) {
+                        match msg {
+                            glane::widgets::scroll_bar::Message::Changed(p) => {
+                                println!("scrollbar2 changed: {p}-{}", p + 10);
+                            }
+                        }
+                    }
+                }
+                if !events.is_empty() {
+                    redraw(&window);
                 }
             }
             wiard::Event::KeyInput(ev) => {
@@ -234,11 +284,11 @@ fn main() -> anyhow::Result<()> {
                     vkey: ev.key_code.vkey,
                     key_state: ev.key_state,
                 }));
-                window.redraw(None);
+                redraw(&window);
             }
             wiard::Event::CharInput(ev) => {
                 scene.input(glane::Input::CharInput(ev.c));
-                window.redraw(None);
+                redraw(&window);
             }
             wiard::Event::ImeBeginComposition(ev) => {
                 let events = scene.input(glane::Input::ImeBeginComposition);
@@ -250,7 +300,7 @@ fn main() -> anyhow::Result<()> {
                         ));
                     }
                 }
-                window.redraw(None);
+                redraw(&window);
             }
             wiard::Event::ImeUpdateComposition(ev) => {
                 scene.input(glane::Input::ImeUpdateComposition(glane::Composition {
@@ -265,15 +315,16 @@ fn main() -> anyhow::Result<()> {
                         .collect(),
                     cursor_position: ev.cursor_position,
                 }));
-                window.redraw(None);
+                redraw(&window);
             }
             wiard::Event::ImeEndComposition(ev) => {
                 scene.input(glane::Input::ImeEndComposition(ev.result));
-                window.redraw(None);
+                redraw(&window);
             }
             wiard::Event::Draw(_) => {
                 let layout = scene.layout();
                 canvas.draw(&layout)?;
+                redrawing.set(false);
             }
             _ => {}
         }

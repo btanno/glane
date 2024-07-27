@@ -35,7 +35,7 @@ impl FontFile {
         Ok(Arc::new(Self {
             path: path.into(),
             data,
-            collection: dbg!(collection),
+            collection,
         }))
     }
 

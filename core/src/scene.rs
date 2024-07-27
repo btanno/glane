@@ -7,6 +7,7 @@ pub struct Context {
     pub viewport: LogicalSize<f32>,
     pub layout: Arc<Layout>,
     pub default_font: Option<Font>,
+    pub prev_input: Option<Input>,
     focus: Option<AnyHandle>,
 }
 
@@ -85,6 +86,7 @@ impl Scene {
                 default_font: FontFace::from_os_default()
                     .ok()
                     .map(|face| Font::new(&face, 14.0)),
+                prev_input: None,
             },
             root: Box::new(root),
             prev_input: None,
@@ -107,6 +109,7 @@ impl Scene {
             self.root.apply(&mut self.apply_funcs);
             self.apply_funcs.0.clear();
         }
+        self.ctx.prev_input = self.prev_input.take();
         let mut events = vec![];
         self.root.input(&self.ctx, &input, &mut events);
         if let Input::MouseInput(m) = &input {

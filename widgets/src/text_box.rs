@@ -20,7 +20,7 @@ impl Default for Style {
 
 #[derive(Clone, Debug)]
 pub enum Message {
-    Changed,
+    Changed(String),
     PositionNotify(LogicalPosition<f32>),
 }
 
@@ -86,11 +86,19 @@ impl Widget for TextBox {
                         '\x08' => {
                             self.front_text.pop();
                         }
-                        _ if c.is_control() => {}
+                        _ if c.is_control() => {
+                            return;
+                        }
                         _ => {
                             self.front_text.extend(c.nfc());
                         }
                     }
+                    let s = self
+                        .front_text
+                        .iter()
+                        .chain(self.back_text.iter())
+                        .collect::<String>();
+                    events.push(Event::new(self, Message::Changed(s)));
                 }
             }
             Input::ImeBeginComposition => {
@@ -112,6 +120,12 @@ impl Widget for TextBox {
                     if let Some(result) = result {
                         self.front_text
                             .append(&mut result.chars().collect::<Vec<_>>());
+                        let s = self
+                            .front_text
+                            .iter()
+                            .chain(self.back_text.iter())
+                            .collect::<String>();
+                        events.push(Event::new(self, Message::Changed(s)));
                     }
                 }
                 self.composition = None;

@@ -49,9 +49,10 @@ where
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         self.child.layout(
-            lc.next(
-                LogicalRect::from_positions(self.position, lc.rect.right_bottom()),
-            ),
+            lc.next(LogicalRect::from_positions(
+                self.position,
+                lc.rect.right_bottom(),
+            )),
             result,
         );
     }
@@ -61,6 +62,7 @@ pub struct Column {
     id: Id,
     children: Vec<Box<dyn Widget>>,
     pub space: f32,
+    pub max_height: Option<f32>,
 }
 
 impl Column {
@@ -70,6 +72,7 @@ impl Column {
             id: Id::new(),
             children: vec![],
             space: 10.0,
+            max_height: None,
         }
     }
 }
@@ -99,7 +102,7 @@ impl Widget for Column {
         for child in self.children.iter() {
             let s = child.size(ctx);
             size.width = s.width.max(size.width);
-            size.height += s.height;
+            size.height += self.max_height.map_or(s.height, |mh| s.height.min(mh));
         }
         size
     }
@@ -109,10 +112,14 @@ impl Widget for Column {
         let size = self.size(&lc);
         for child in self.children.iter() {
             let s = child.size(&lc);
+            let s = self
+                .max_height
+                .map_or(s, |mh| LogicalSize::new(s.width, s.height.min(mh)));
             child.layout(
-                lc.next(
-                    LogicalRect::from_position_size(pt, LogicalSize::new(size.width, s.height)),
-                ),
+                lc.next(LogicalRect::from_position_size(
+                    pt,
+                    LogicalSize::new(size.width, s.height),
+                )),
                 result,
             );
             pt.y += s.height + self.space;
