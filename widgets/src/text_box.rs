@@ -228,7 +228,7 @@ impl Widget for TextBox {
                         self.widget_state,
                         rect,
                         text,
-                        clause.targeted,
+                        clause.targeted
                     ));
                 }
                 let text_rect = if let Some(clause) =

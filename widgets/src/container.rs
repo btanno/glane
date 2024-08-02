@@ -108,8 +108,8 @@ impl Widget for Column {
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
-        let mut pt = lc.rect.left_top();
         let size = self.size(&lc);
+        let mut rect = lc.rect;
         for child in self.children.iter() {
             let s = child.size(&lc);
             let s = self
@@ -117,17 +117,22 @@ impl Widget for Column {
                 .map_or(s, |mh| LogicalSize::new(s.width, s.height.min(mh)));
             child.layout(
                 lc.next(LogicalRect::from_position_size(
-                    pt,
+                    rect.left_top(),
                     LogicalSize::new(size.width, s.height),
                 )),
                 result,
             );
-            pt.y += s.height + self.space;
+            rect.top += s.height + self.space;
+            rect.bottom -= s.height + self.space;
         }
     }
 }
 
 impl HasChildren for Column {
+    fn len(&self) -> usize {
+        self.children.len()
+    }
+
     fn push(&mut self, child: impl Widget) {
         self.children.push(Box::new(child));
     }
@@ -192,24 +197,29 @@ impl Widget for Row {
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
-        let mut pt = lc.rect.left_top();
         let size = self.size(&lc);
+        let mut rect = lc.rect;
         for child in self.children.iter() {
-            let s = child.size(&lc);
+            let s = child.size(&lc.next(rect));
             let h = (size.height - s.height) / 2.0;
             child.layout(
                 lc.next(LogicalRect::from_position_size(
-                    LogicalPosition::new(pt.x, pt.y + h),
+                    LogicalPosition::new(rect.left, rect.top + h),
                     LogicalSize::new(s.width, size.height),
                 )),
                 result,
             );
-            pt.x += s.width + self.space;
+            rect.left += s.width + self.space;
+            rect.right -= s.width + self.space;
         }
     }
 }
 
 impl HasChildren for Row {
+    fn len(&self) -> usize {
+        self.children.len()
+    }
+
     fn push(&mut self, child: impl Widget) {
         self.children.push(Box::new(child));
     }

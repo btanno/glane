@@ -80,6 +80,10 @@ impl ScrollBar {
         }
     }
 
+    pub fn current(&self) -> usize {
+        self.current
+    }
+
     pub fn add(&mut self, d: usize) {
         self.current += d;
     }

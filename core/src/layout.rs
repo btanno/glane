@@ -9,6 +9,21 @@ pub struct Area {
 }
 
 #[derive(Clone, Debug)]
+pub struct SelectedArea {
+    pub handle: AnyHandle,
+    pub widget_state: WidgetState,
+    pub rect: LogicalRect<f32>,
+}
+
+#[derive(Clone, Debug)]
+pub struct ClippedArea {
+    pub handle: AnyHandle,
+    pub widget_state: WidgetState,
+    pub rect: LogicalRect<f32>,
+    pub layout: Layout,
+}
+
+#[derive(Clone, Debug)]
 pub struct Text {
     pub handle: AnyHandle,
     pub widget_state: WidgetState,
@@ -35,6 +50,8 @@ pub struct Cursor {
 #[derive(Clone, Debug)]
 pub enum LayoutElement {
     Area(Area),
+    SelectedArea(SelectedArea),
+    ClippedArea(ClippedArea),
     Text(Text),
     CompositionText(CompositionText),
     Cursor(Cursor),
@@ -47,6 +64,35 @@ impl LayoutElement {
             handle: AnyHandle::new(widget),
             widget_state,
             rect,
+        })
+    }
+
+    #[inline]
+    pub fn selected_area(
+        widget: &impl Widget,
+        widget_state: WidgetState,
+        rect: LogicalRect<f32>,
+    ) -> Self {
+        Self::SelectedArea(SelectedArea {
+            handle: AnyHandle::new(widget),
+            widget_state,
+            rect,
+        })
+    }
+
+    #[inline]
+    pub fn clipped_area(
+        widget: &impl Widget,
+        widget_state: WidgetState,
+        rect: LogicalRect<f32>,
+        ctx: &Context,
+        layout: LayoutConstructor,
+    ) -> Self {
+        Self::ClippedArea(ClippedArea {
+            handle: AnyHandle::new(widget),
+            widget_state,
+            rect,
+            layout: Layout::new(ctx, layout),
         })
     }
 
@@ -95,6 +141,8 @@ impl LayoutElement {
     pub fn handle(&self) -> AnyHandle {
         match self {
             Self::Area(a) => a.handle,
+            Self::SelectedArea(a) => a.handle,
+            Self::ClippedArea(a) => a.handle,
             Self::Text(t) => t.handle,
             Self::CompositionText(t) => t.handle,
             Self::Cursor(c) => c.handle,
@@ -105,6 +153,8 @@ impl LayoutElement {
     pub fn widget_state(&self) -> WidgetState {
         match self {
             Self::Area(a) => a.widget_state,
+            Self::SelectedArea(a) => a.widget_state,
+            Self::ClippedArea(a) => a.widget_state,
             Self::Text(t) => t.widget_state,
             Self::CompositionText(t) => t.widget_state,
             Self::Cursor(c) => c.widget_state,
@@ -115,6 +165,8 @@ impl LayoutElement {
     pub fn rect(&self) -> &LogicalRect<f32> {
         match self {
             Self::Area(a) => &a.rect,
+            Self::SelectedArea(a) => &a.rect,
+            Self::ClippedArea(a) => &a.rect,
             Self::Text(t) => &t.rect,
             Self::CompositionText(t) => &t.rect,
             Self::Cursor(c) => &c.rect,
@@ -151,7 +203,7 @@ pub struct LayoutConstructor {
 }
 
 impl LayoutConstructor {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self { v: VecDeque::new() }
     }
 
@@ -219,7 +271,7 @@ impl Layout {
     pub fn is_empty(&self) -> bool {
         self.v.is_empty()
     }
-    
+
     #[inline]
     pub fn len(&self) -> usize {
         self.v.len()

@@ -55,6 +55,7 @@ struct Canvas {
     text_box_border: pnte::SolidColorBrush,
     scroll_bar_bg: pnte::SolidColorBrush,
     scroll_bar_thumb: pnte::SolidColorBrush,
+    selected_bg: pnte::SolidColorBrush,
     button_type: TypeId,
     text_box_type: TypeId,
     scroll_bar_type: TypeId,
@@ -85,6 +86,7 @@ impl Canvas {
         let text_box_border = pnte::SolidColorBrush::new(&ctx, (0.3, 0.3, 0.3, 1.0))?;
         let scroll_bar_bg = pnte::SolidColorBrush::new(&ctx, (0.3, 0.3, 0.3, 1.0))?;
         let scroll_bar_thumb = pnte::SolidColorBrush::new(&ctx, (0.8, 0.8, 0.8, 1.0))?;
+        let selected_bg = pnte::SolidColorBrush::new(&ctx, (0.0, 0.3, 0.0, 1.0))?;
         let button_type = TypeId::of::<glane::widgets::Button>();
         let text_box_type = TypeId::of::<glane::widgets::TextBox>();
         let scroll_bar_type = TypeId::of::<glane::widgets::ScrollBar>();
@@ -100,6 +102,7 @@ impl Canvas {
             text_box_border,
             scroll_bar_bg,
             scroll_bar_thumb,
+            selected_bg,
             button_type,
             text_box_type,
             scroll_bar_type,
@@ -107,83 +110,114 @@ impl Canvas {
         })
     }
 
+    fn draw_element<T: pnte::Backend>(&self, cmd: &pnte::DrawCommand<T>, l: &glane::LayoutElement) {
+        match l {
+            glane::LayoutElement::Area(_) => {
+                if l.handle().type_id() == self.button_type {
+                    let brush = match l.widget_state() {
+                        glane::WidgetState::None => &self.button_bg,
+                        glane::WidgetState::Hover => &self.button_bg_hover,
+                        glane::WidgetState::Pressed => &self.button_bg_pressed,
+                    };
+                    let rect = l.rect();
+                    cmd.fill(
+                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                        brush,
+                    );
+                } else if l.handle().type_id() == self.text_box_type {
+                    let rect = l.rect();
+                    cmd.stroke(
+                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                        &self.text_box_border,
+                        2.0,
+                        None,
+                    );
+                } else if l.handle().type_id() == self.scroll_bar_type {
+                    let rect = l.rect();
+                    cmd.fill(
+                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                        &self.scroll_bar_bg,
+                    );
+                } else if l.handle().type_id() == self.scroll_bar_thumb_type {
+                    let rect = l.rect();
+                    cmd.fill(
+                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                        &self.scroll_bar_thumb,
+                    );
+                }
+            }
+            glane::LayoutElement::SelectedArea(area) => {
+                let rect = pnte::Rect::new(
+                    area.rect.left,
+                    area.rect.top,
+                    area.rect.right,
+                    area.rect.bottom,
+                );
+                cmd.fill(&rect, &self.selected_bg);
+            }
+            glane::LayoutElement::ClippedArea(area) => {
+                let rect = area.rect;
+                let rect = pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
+                cmd.push_clip(rect);
+                for child in area.layout.iter() {
+                    self.draw_element(cmd, &child);
+                }
+                cmd.pop_clip();
+                cmd.stroke(&rect, &self.white, 2.0, None);
+            }
+            glane::LayoutElement::Cursor(_) => {
+                let rect = l.rect();
+                cmd.fill(
+                    &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                    &self.white,
+                );
+            }
+            glane::LayoutElement::Text(t) => {
+                let text = pnte::TextLayout::new(&self.ctx)
+                    .text(&t.string)
+                    .format(&self.text_format)
+                    .build()
+                    .unwrap();
+                cmd.draw_text(&text, (l.rect().left, l.rect().top), &self.white)
+                    .unwrap();
+            }
+            glane::LayoutElement::CompositionText(t) => {
+                let text = pnte::TextLayout::new(&self.ctx)
+                    .text(&t.string)
+                    .format(&self.text_format)
+                    .build()
+                    .unwrap();
+                cmd.draw_text(&text, (l.rect().left, l.rect().top), &self.white)
+                    .unwrap();
+                let width = if t.targeted { 2.0 } else { 1.0 };
+                cmd.stroke(
+                    &pnte::Line::new(
+                        (l.rect().left + 1.0, l.rect().bottom),
+                        (l.rect().right - 1.0, l.rect().bottom),
+                    ),
+                    &self.white,
+                    width,
+                    None,
+                );
+            }
+        }
+    }
+
     fn draw(&self, layout: &glane::Layout) -> anyhow::Result<()> {
         self.ctx.draw(&self.render_target, |cmd| {
             cmd.clear((0.0, 0.0, 0.3, 0.0));
             for l in layout.iter() {
-                match l {
-                    glane::LayoutElement::Area(_) => {
-                        if l.handle().type_id() == self.button_type {
-                            let brush = match l.widget_state() {
-                                glane::WidgetState::None => &self.button_bg,
-                                glane::WidgetState::Hover => &self.button_bg_hover,
-                                glane::WidgetState::Pressed => &self.button_bg_pressed,
-                            };
-                            let rect = l.rect();
-                            cmd.fill(
-                                &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                                brush,
-                            );
-                        } else if l.handle().type_id() == self.text_box_type {
-                            let rect = l.rect();
-                            cmd.stroke(
-                                &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                                &self.text_box_border,
-                                2.0,
-                                None,
-                            );
-                        } else if l.handle().type_id() == self.scroll_bar_type {
-                            let rect = l.rect();
-                            cmd.fill(
-                                &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                                &self.scroll_bar_bg,
-                            );
-                        } else if l.handle().type_id() == self.scroll_bar_thumb_type {
-                            let rect = l.rect();
-                            cmd.fill(
-                                &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                                &self.scroll_bar_thumb,
-                            );
-                        }
-                    }
-                    glane::LayoutElement::Cursor(_) => {
-                        let rect = l.rect();
-                        cmd.fill(
-                            &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                            &self.white,
-                        );
-                    }
-                    glane::LayoutElement::Text(t) => {
-                        let text = pnte::TextLayout::new(&self.ctx)
-                            .text(&t.string)
-                            .format(&self.text_format)
-                            .build()
-                            .unwrap();
-                        cmd.draw_text(&text, (l.rect().left, l.rect().top), &self.white)
-                            .unwrap();
-                    }
-                    glane::LayoutElement::CompositionText(t) => {
-                        let text = pnte::TextLayout::new(&self.ctx)
-                            .text(&t.string)
-                            .format(&self.text_format)
-                            .build()
-                            .unwrap();
-                        cmd.draw_text(&text, (l.rect().left, l.rect().top), &self.white)
-                            .unwrap();
-                        let width = if t.targeted { 2.0 } else { 1.0 };
-                        cmd.stroke(
-                            &pnte::Line::new(
-                                (l.rect().left + 1.0, l.rect().bottom),
-                                (l.rect().right - 1.0, l.rect().bottom),
-                            ),
-                            &self.white,
-                            width,
-                            None,
-                        );
-                    }
-                }
+                self.draw_element(&cmd, l);
             }
         })?;
+        Ok(())
+    }
+
+    fn resize(
+        &mut self,
+        size: wiard::PhysicalSize<u32>,
+    ) -> anyhow::Result<()> {
+        self.render_target.resize((size.width, size.height))?;
         Ok(())
     }
 }
@@ -196,7 +230,7 @@ fn main() -> anyhow::Result<()> {
         .build()?;
     let (mut scene, root) = {
         let mut root = glane::widgets::Column::new();
-        root.max_height = Some(300.0);
+        root.max_height = Some(200.0);
         let handle = glane::Handle::new(&root);
         let scene = glane::Scene::new(root);
         (scene, handle)
@@ -210,8 +244,19 @@ fn main() -> anyhow::Result<()> {
     let row2 = glane::push_child(&mut scene, &root, glane::widgets::Row::new());
     glane::push_child(&mut scene, &row2, glane::widgets::Label::new("ScrollBar"));
     let scroll_bar = glane::push_child(&mut scene, &row2, glane::widgets::ScrollBar::new(100, 10));
-    let scroll_bar2 = glane::push_child(&mut scene, &row2, glane::widgets::ScrollBar::new(1000, 10));
-    let canvas = Canvas::new(&window, &scene)?;
+    let scroll_bar2 =
+        glane::push_child(&mut scene, &row2, glane::widgets::ScrollBar::new(1000, 10));
+    let row3 = glane::push_child(&mut scene, &root, glane::widgets::Row::new());
+    glane::push_child(&mut scene, &row3, glane::widgets::Label::new("ListBox"));
+    let list_box = glane::push_child(&mut scene, &row3, glane::widgets::ListBox::new());
+    for c in 'a'..='z' {
+        glane::push_child(
+            &mut scene,
+            &list_box,
+            glane::widgets::Text::new(c.to_string()),
+        );
+    }
+    let mut canvas = Canvas::new(&window, &scene)?;
     let redrawing = Rc::new(Cell::new(false));
     let redraw = |window: &wiard::Window| {
         if !redrawing.get() {
@@ -242,7 +287,7 @@ fn main() -> anyhow::Result<()> {
                             }
                             _ => {}
                         }
-                    } 
+                    }
                 }
                 redraw(&window);
             }
@@ -263,7 +308,7 @@ fn main() -> anyhow::Result<()> {
                 for event in events.iter() {
                     if let Some(msg) = event.message(&scroll_bar) {
                         match msg {
-                            glane::widgets::scroll_bar::Message::Changed(p) =>{
+                            glane::widgets::scroll_bar::Message::Changed(p) => {
                                 println!("scrollbar changed: {p}-{}", p + 10);
                             }
                         }
@@ -325,6 +370,18 @@ fn main() -> anyhow::Result<()> {
                 let layout = scene.layout();
                 canvas.draw(&layout)?;
                 redrawing.set(false);
+            }
+            wiard::Event::Resized(ev) => {
+                let Some(dpi) = window.dpi() else {
+                    continue;
+                };
+                canvas.resize(ev.size)?;
+                let size = ev.size.to_logical(dpi);
+                scene.set_viewport(glane::LogicalSize::new(
+                    size.width as f32,
+                    size.height as f32,
+                ));
+                redraw(&window);
             }
             _ => {}
         }
