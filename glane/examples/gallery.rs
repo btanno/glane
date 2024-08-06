@@ -263,9 +263,7 @@ fn main() -> anyhow::Result<()> {
     let (mut scene, root) = {
         let mut root = glane::widgets::Column::new();
         root.max_height = Some(200.0);
-        let handle = glane::Handle::new(&root);
-        let scene = glane::Scene::new(root);
-        (scene, handle)
+        glane::Scene::new(root)
     };
     let row = glane::push_child(&mut scene, &root, glane::widgets::Row::new());
     glane::push_child(&mut scene, &row, glane::widgets::Label::new("Button"));
