@@ -36,7 +36,9 @@ impl HasId for Text {
 }
 
 impl Widget for Text {
-    fn input(&mut self, _ctx: &Context, _input: &Input, _events: &mut Vec<Event>) {}
+    fn input(&mut self, _ctx: &Context, _input: &Input, _events: &mut Events) -> ControlFlow {
+        ControlFlow::Continue
+    }
 
     fn apply(&mut self, funcs: &mut ApplyFuncs) {
         funcs.apply(self);
@@ -54,7 +56,7 @@ impl Widget for Text {
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
-        result.push_back(LayoutElement::text(
+        result.push(&lc, LayoutElement::text(
             self,
             WidgetState::None,
             LogicalRect::from_position_size(lc.rect.left_top(), size),

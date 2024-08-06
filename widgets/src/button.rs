@@ -40,35 +40,32 @@ impl HasId for Button {
 }
 
 impl Widget for Button {
-    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Vec<Event>) {
+    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow {
         let Some(layout) = ctx.find_layout(self).nth(0) else {
-            return;
+            return ControlFlow::Continue;
         };
         match input {
             Input::MouseInput(m) => {
-                let prev_state = self.state;
                 let state = WidgetState::current(layout.rect(), &m.mouse_state);
                 let clicked = m.button == MouseButton::Left
                     && m.button_state == ButtonState::Released
                     && state == WidgetState::Hover;
                 if clicked {
-                    events.push(Event::new(self, Message::Clicked));
+                    events.push_message(self, Message::Clicked);
                 }
-                if state != prev_state {
-                    events.push(Event::new(self, StateChanged::new(state, prev_state)));
-                    self.state = state;
+                if state != self.state {
+                    self.state = events.push_state_changed(self, state, self.state);
                 }
             }
             Input::CursorMoved(m) => {
-                let prev_state = self.state;
                 let state = WidgetState::current(layout.rect(), &m.mouse_state);
-                if state != prev_state {
-                    events.push(Event::new(self, StateChanged::new(state, prev_state)));
-                    self.state = state;
+                if state != self.state {
+                    self.state = events.push_state_changed(self, state, self.state);
                 }
             }
             _ => {}
         }
+        ControlFlow::Continue
     }
 
     fn apply(&mut self, funcs: &mut ApplyFuncs) {
@@ -91,19 +88,17 @@ impl Widget for Button {
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
         let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
-        result.push_back(LayoutElement::area(self, self.state, rect));
+        result.push(&lc, LayoutElement::area(self, self.state, rect));
         let rect = LogicalRect::new(
             rect.left + self.style.padding.left,
             rect.top + self.style.padding.top,
             rect.right - self.style.padding.right,
             rect.bottom - self.style.padding.bottom,
         );
-        result.push_back(LayoutElement::text(
-            self,
-            self.state,
-            rect,
-            self.text.clone(),
-        ));
+        result.push(
+            &lc,
+            LayoutElement::text(self, self.state, rect, self.text.clone()),
+        );
     }
 }
 

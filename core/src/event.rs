@@ -82,3 +82,68 @@ pub fn state_changed_exists(v: &Vec<Event>) -> bool {
         .find_map(|ev| ev.downcast_ref::<StateChanged>())
         .is_some()
 }
+
+pub struct Events(Vec<Event>);
+
+impl Events {
+    pub(crate) fn new() -> Self {
+        Self(vec![])
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    #[inline]
+    pub fn push(&mut self, widget: &impl Widget, object: impl Any) {
+        self.0.push(Event::new(widget, object))
+    }
+
+    #[inline]
+    pub fn push_message<T>(&mut self, widget: &T, message: T::Message)
+    where
+        T: WidgetMessage,
+    {
+        self.0.push(Event::new(widget, message));
+    }
+
+    #[inline]
+    pub fn push_state_changed(
+        &mut self,
+        widget: &impl Widget,
+        current: WidgetState,
+        prev: WidgetState,
+    ) -> WidgetState {
+        if current != prev {
+            self.0
+                .push(Event::new(widget, StateChanged::new(current, prev)));
+        }
+        current
+    }
+
+    #[inline]
+    pub fn pop(&mut self) -> Option<Event> {
+        self.0.pop()
+    }
+
+    #[inline]
+    pub fn remove(&mut self, index: usize) -> Event {
+        self.0.remove(index)
+    }
+
+    #[inline]
+    pub fn iter(&self) -> impl Iterator<Item = &Event> {
+        self.0.iter()
+    }
+
+    #[inline]
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Event> {
+        self.0.iter_mut()
+    }
+}

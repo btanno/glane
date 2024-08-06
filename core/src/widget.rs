@@ -1,8 +1,14 @@
 use super::*;
 use std::any::{Any, TypeId};
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ControlFlow {
+    Break,
+    Continue,
+}
+
 pub trait Widget: Any + HasId {
-    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Vec<Event>);
+    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow;
     fn apply(&mut self, funcs: &mut ApplyFuncs);
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32>;
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor);

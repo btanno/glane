@@ -51,7 +51,10 @@ impl HasId for Thumb {
 }
 
 impl Widget for Thumb {
-    fn input(&mut self, _ctx: &Context, _input: &Input, _events: &mut Vec<Event>) {}
+    fn input(&mut self, _ctx: &Context, _input: &Input, _events: &mut Events) -> ControlFlow {
+        ControlFlow::Continue
+    }
+
     fn apply(&mut self, _funcs: &mut ApplyFuncs) {}
     fn size(&self, _ctx: &LayoutContext) -> LogicalSize<f32> {
         (0.0, 0.0).into()
@@ -100,12 +103,12 @@ impl HasId for ScrollBar {
 }
 
 impl Widget for ScrollBar {
-    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Vec<Event>) {
+    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow {
         let Some(layout) = ctx.find_layout(self).next() else {
-            return;
+            return ControlFlow::Continue;
         };
         let Some(thumb_layout) = ctx.find_layout(&self.thumb).next() else {
-            return;
+            return ControlFlow::Continue;
         };
         let size = layout.rect().size();
         let thumb_size = thumb_layout.rect().size();
@@ -132,7 +135,7 @@ impl Widget for ScrollBar {
                                 (self.len - self.thumb.len) as f32 * p as f32 / height as f32;
                             self.current =
                                 (current.floor() as usize).min(self.len - self.thumb.len - 1);
-                            events.push(Event::new(self, Message::Changed(self.current)));
+                            events.push_message(self, Message::Changed(self.current));
                         }
                         Direction::Horizontal => {}
                     }
@@ -140,6 +143,7 @@ impl Widget for ScrollBar {
             }
             _ => {}
         }
+        ControlFlow::Continue
     }
 
     fn apply(&mut self, funcs: &mut ApplyFuncs) {
@@ -171,12 +175,11 @@ impl Widget for ScrollBar {
                 );
                 let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
                 let thumb_rect = LogicalRect::from_position_size(thumb_pt, thumb_size);
-                result.push_back(LayoutElement::area(self, WidgetState::None, rect));
-                result.push_back(LayoutElement::area(
-                    &self.thumb,
-                    self.thumb.widget_state,
-                    thumb_rect,
-                ));
+                result.push(&lc, LayoutElement::area(self, WidgetState::None, rect));
+                result.push(
+                    &lc,
+                    LayoutElement::area(&self.thumb, self.thumb.widget_state, thumb_rect),
+                );
             }
             Direction::Horizontal => {
                 let thumb_size = LogicalSize::new(
@@ -189,12 +192,11 @@ impl Widget for ScrollBar {
                 );
                 let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
                 let thumb_rect = LogicalRect::from_position_size(thumb_pt, thumb_size);
-                result.push_back(LayoutElement::area(self, WidgetState::None, rect));
-                result.push_back(LayoutElement::area(
-                    &self.thumb,
-                    self.thumb.widget_state,
-                    thumb_rect,
-                ));
+                result.push(&lc, LayoutElement::area(self, WidgetState::None, rect));
+                result.push(
+                    &lc,
+                    LayoutElement::area(&self.thumb, self.thumb.widget_state, thumb_rect),
+                );
             }
         }
     }

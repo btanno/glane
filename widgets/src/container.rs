@@ -2,7 +2,7 @@ use super::*;
 
 pub struct Abs<T> {
     id: Id,
-    child: T,
+    pub child: T,
     pub position: LogicalPosition<f32>,
 }
 
@@ -11,11 +11,11 @@ where
     T: Widget,
 {
     #[inline]
-    pub fn new(child: T, position: LogicalPosition<f32>) -> Self {
+    pub fn new(child: T, position: impl Into<LogicalPosition<f32>>) -> Self {
         Self {
             id: Id::new(),
             child,
-            position,
+            position: position.into(),
         }
     }
 }
@@ -34,8 +34,8 @@ impl<T> Widget for Abs<T>
 where
     T: Widget,
 {
-    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Vec<Event>) {
-        self.child.input(ctx, input, events);
+    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow {
+        self.child.input(ctx, input, events)
     }
 
     fn apply(&mut self, funcs: &mut ApplyFuncs) {
@@ -49,10 +49,10 @@ where
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         self.child.layout(
-            lc.next(LogicalRect::from_positions(
-                self.position,
-                lc.rect.right_bottom(),
-            )),
+            lc.next(
+                LogicalRect::from_positions(self.position, lc.rect.right_bottom()),
+                lc.layer,
+            ),
             result,
         );
     }
@@ -84,10 +84,13 @@ impl HasId for Column {
 }
 
 impl Widget for Column {
-    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Vec<Event>) {
+    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow {
         for child in self.children.iter_mut() {
-            child.input(ctx, input, events);
+            if child.input(ctx, input, events) == ControlFlow::Break {
+                return ControlFlow::Break;
+            }
         }
+        ControlFlow::Continue
     }
 
     fn apply(&mut self, funcs: &mut ApplyFuncs) {
@@ -116,10 +119,13 @@ impl Widget for Column {
                 .max_height
                 .map_or(s, |mh| LogicalSize::new(s.width, s.height.min(mh)));
             child.layout(
-                lc.next(LogicalRect::from_position_size(
-                    rect.left_top(),
-                    LogicalSize::new(size.width, s.height),
-                )),
+                lc.next(
+                    LogicalRect::from_position_size(
+                        rect.left_top(),
+                        LogicalSize::new(size.width, s.height),
+                    ),
+                    lc.layer,
+                ),
                 result,
             );
             rect.top += s.height + self.space;
@@ -173,10 +179,13 @@ impl HasId for Row {
 }
 
 impl Widget for Row {
-    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Vec<Event>) {
+    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow {
         for child in self.children.iter_mut() {
-            child.input(ctx, input, events);
+            if child.input(ctx, input, events) == ControlFlow::Break {
+                return ControlFlow::Break;
+            }
         }
+        ControlFlow::Continue
     }
 
     fn apply(&mut self, funcs: &mut ApplyFuncs) {
@@ -193,6 +202,9 @@ impl Widget for Row {
             size.width += s.width;
             size.height = s.height.max(size.height);
         }
+        if ctx.rect.right < ctx.rect.left + size.width {
+            size.width = ctx.rect.right - ctx.rect.left;
+        }
         size
     }
 
@@ -200,17 +212,21 @@ impl Widget for Row {
         let size = self.size(&lc);
         let mut rect = lc.rect;
         for child in self.children.iter() {
-            let s = child.size(&lc.next(rect));
+            let s = child.size(&lc.next(rect, lc.layer));
             let h = (size.height - s.height) / 2.0;
+            let r = rect.left + s.width;
+            let rb = LogicalPosition::new(
+                (r > lc.rect.right).then_some(lc.rect.right).unwrap_or(r),
+                rect.bottom,
+            );
             child.layout(
-                lc.next(LogicalRect::from_position_size(
-                    LogicalPosition::new(rect.left, rect.top + h),
-                    LogicalSize::new(s.width, size.height),
-                )),
+                lc.next(
+                    LogicalRect::from_positions(LogicalPosition::new(rect.left, rect.top + h), rb),
+                    lc.layer,
+                ),
                 result,
             );
             rect.left += s.width + self.space;
-            rect.right -= s.width + self.space;
         }
     }
 }

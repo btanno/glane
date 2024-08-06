@@ -56,10 +56,12 @@ struct Canvas {
     scroll_bar_bg: pnte::SolidColorBrush,
     scroll_bar_thumb: pnte::SolidColorBrush,
     selected_bg: pnte::SolidColorBrush,
+    list_box_bg: pnte::SolidColorBrush,
     button_type: TypeId,
     text_box_type: TypeId,
     scroll_bar_type: TypeId,
     scroll_bar_thumb_type: TypeId,
+    list_box_type: TypeId,
 }
 
 impl Canvas {
@@ -87,10 +89,12 @@ impl Canvas {
         let scroll_bar_bg = pnte::SolidColorBrush::new(&ctx, (0.3, 0.3, 0.3, 1.0))?;
         let scroll_bar_thumb = pnte::SolidColorBrush::new(&ctx, (0.8, 0.8, 0.8, 1.0))?;
         let selected_bg = pnte::SolidColorBrush::new(&ctx, (0.0, 0.3, 0.0, 1.0))?;
+        let list_box_bg = pnte::SolidColorBrush::new(&ctx, (0.1, 0.1, 0.1, 0.9))?;
         let button_type = TypeId::of::<glane::widgets::Button>();
         let text_box_type = TypeId::of::<glane::widgets::TextBox>();
         let scroll_bar_type = TypeId::of::<glane::widgets::ScrollBar>();
         let scroll_bar_thumb_type = TypeId::of::<glane::widgets::scroll_bar::Thumb>();
+        let list_box_type = TypeId::of::<glane::widgets::ListBox>();
         Ok(Self {
             ctx,
             render_target,
@@ -103,10 +107,12 @@ impl Canvas {
             scroll_bar_bg,
             scroll_bar_thumb,
             selected_bg,
+            list_box_bg,
             button_type,
             text_box_type,
             scroll_bar_type,
             scroll_bar_thumb_type,
+            list_box_type,
         })
     }
 
@@ -144,6 +150,14 @@ impl Canvas {
                         &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
                         &self.scroll_bar_thumb,
                     );
+                } else {
+                    let rect = l.rect();
+                    cmd.stroke(
+                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                        &self.text_box_border,
+                        2.0,
+                        None,
+                    );
                 }
             }
             glane::LayoutElement::SelectedArea(area) => {
@@ -158,12 +172,33 @@ impl Canvas {
             glane::LayoutElement::ClippedArea(area) => {
                 let rect = area.rect;
                 let rect = pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
-                cmd.push_clip(rect);
-                for child in area.layout.iter() {
-                    self.draw_element(cmd, &child);
+                if l.handle().type_id() == self.list_box_type {
+                    cmd.push_clip(rect);
+                    cmd.fill(
+
+                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                        &self.list_box_bg,
+                    );
+                    for child in area.layout.iter() {
+                        self.draw_element(cmd, &child);
+                    }
+                    cmd.pop_clip();
+                    cmd.stroke(
+                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                        &self.text_box_border,
+                        2.0,
+                        None,
+                    );
+                } else {
+                    let rect = area.rect;
+                    let rect = pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
+                    cmd.push_clip(rect);
+                    for child in area.layout.iter() {
+                        self.draw_element(cmd, &child);
+                    }
+                    cmd.pop_clip();
+                    cmd.stroke(&rect, &self.white, 2.0, None);
                 }
-                cmd.pop_clip();
-                cmd.stroke(&rect, &self.white, 2.0, None);
             }
             glane::LayoutElement::Cursor(_) => {
                 let rect = l.rect();
@@ -207,16 +242,13 @@ impl Canvas {
         self.ctx.draw(&self.render_target, |cmd| {
             cmd.clear((0.0, 0.0, 0.3, 0.0));
             for l in layout.iter() {
-                self.draw_element(&cmd, l);
+                self.draw_element(&cmd, &l);
             }
         })?;
         Ok(())
     }
 
-    fn resize(
-        &mut self,
-        size: wiard::PhysicalSize<u32>,
-    ) -> anyhow::Result<()> {
+    fn resize(&mut self, size: wiard::PhysicalSize<u32>) -> anyhow::Result<()> {
         self.render_target.resize((size.width, size.height))?;
         Ok(())
     }
@@ -246,6 +278,16 @@ fn main() -> anyhow::Result<()> {
     let scroll_bar = glane::push_child(&mut scene, &row2, glane::widgets::ScrollBar::new(100, 10));
     let scroll_bar2 =
         glane::push_child(&mut scene, &row2, glane::widgets::ScrollBar::new(1000, 10));
+    let row4 = glane::push_child(&mut scene, &root, glane::widgets::Row::new());
+    glane::push_child(&mut scene, &row4, glane::widgets::Label::new("DropdownBox"));
+    let dropdown_box = glane::push_child(&mut scene, &row4, glane::widgets::DropdownBox::new());
+    for c in 'A'..='C' {
+        glane::push_child(
+            &mut scene,
+            &dropdown_box,
+            glane::widgets::Text::new(c.to_string()),
+        );
+    }
     let row3 = glane::push_child(&mut scene, &root, glane::widgets::Row::new());
     glane::push_child(&mut scene, &row3, glane::widgets::Label::new("ListBox"));
     let list_box = glane::push_child(&mut scene, &row3, glane::widgets::ListBox::new());
@@ -256,6 +298,8 @@ fn main() -> anyhow::Result<()> {
             glane::widgets::Text::new(c.to_string()),
         );
     }
+    let layout = scene.layout();
+    println!("{layout:?}");
     let mut canvas = Canvas::new(&window, &scene)?;
     let redrawing = Rc::new(Cell::new(false));
     let redraw = |window: &wiard::Window| {

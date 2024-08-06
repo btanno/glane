@@ -1,5 +1,6 @@
 use super::*;
 use std::any::Any;
+use std::cell::Ref;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -16,7 +17,7 @@ impl Context {
     pub fn find_layout<'a>(
         &'a self,
         widget: &dyn Widget,
-    ) -> impl Iterator<Item = &'a LayoutElement> + 'a {
+    ) -> impl Iterator<Item = Ref<'a, LayoutElement>> {
         let id = widget.id();
         self.layout.iter().filter(move |l| l.handle().id() == id)
     }
@@ -104,13 +105,13 @@ impl Scene {
         self.ctx.default_font.as_ref()
     }
 
-    pub fn input(&mut self, input: Input) -> Vec<Event> {
+    pub fn input(&mut self, input: Input) -> Events {
         if !self.apply_funcs.0.is_empty() {
             self.root.apply(&mut self.apply_funcs);
             self.apply_funcs.0.clear();
         }
         self.ctx.prev_input = self.prev_input.take();
-        let mut events = vec![];
+        let mut events = Events::new();
         self.root.input(&self.ctx, &input, &mut events);
         if let Input::MouseInput(m) = &input {
             if m.button_state == ButtonState::Pressed {

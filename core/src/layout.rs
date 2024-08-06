@@ -1,5 +1,5 @@
 use super::*;
-use std::collections::VecDeque;
+use std::cell::{Ref, RefCell, RefMut};
 
 #[derive(Clone, Debug)]
 pub struct Area {
@@ -178,6 +178,7 @@ impl LayoutElement {
 pub struct LayoutContext<'a> {
     pub ctx: &'a Context,
     pub rect: LogicalRect<f32>,
+    pub layer: u32,
 }
 
 impl<'a> LayoutContext<'a> {
@@ -185,86 +186,75 @@ impl<'a> LayoutContext<'a> {
         Self {
             ctx,
             rect: LogicalRect::from_position_size(LogicalPosition::new(0.0, 0.0), ctx.viewport),
+            layer: 0,
         }
     }
 
     #[inline]
-    pub fn next(&self, rect: LogicalRect<f32>) -> Self {
+    pub fn next(&self, rect: LogicalRect<f32>, layer: u32) -> Self {
         Self {
             ctx: self.ctx,
             rect,
+            layer,
         }
     }
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct Element {
+    element: RefCell<LayoutElement>,
+    layer: u32,
 }
 
 #[derive(Debug)]
 pub struct LayoutConstructor {
-    v: VecDeque<LayoutElement>,
+    v: Vec<Element>,
 }
 
 impl LayoutConstructor {
     pub fn new() -> Self {
-        Self { v: VecDeque::new() }
+        Self {
+            v: vec![],
+        }
     }
 
     #[inline]
-    pub fn push_front(&mut self, element: LayoutElement) {
-        self.v.push_front(element);
+    pub fn push(&mut self, ctx: &LayoutContext, element: LayoutElement) {
+        self.v.push(Element {
+            element: RefCell::new(element),
+            layer: ctx.layer,
+        });
     }
 
     #[inline]
-    pub fn push_back(&mut self, element: LayoutElement) {
-        self.v.push_back(element);
+    pub fn iter(&self) -> impl Iterator<Item = Ref<LayoutElement>> {
+        self.v.iter().map(|elem| elem.element.borrow())
     }
 
     #[inline]
-    pub fn front(&self) -> Option<&LayoutElement> {
-        self.v.front()
-    }
-
-    #[inline]
-    pub fn back(&self) -> Option<&LayoutElement> {
-        self.v.back()
-    }
-
-    #[inline]
-    pub fn front_mut(&mut self) -> Option<&mut LayoutElement> {
-        self.v.front_mut()
-    }
-
-    #[inline]
-    pub fn back_mut(&mut self) -> Option<&mut LayoutElement> {
-        self.v.back_mut()
-    }
-
-    #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = &LayoutElement> {
-        self.v.iter()
-    }
-
-    #[inline]
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut LayoutElement> {
-        self.v.iter_mut()
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = RefMut<LayoutElement>> {
+        self.v.iter().map(|elem| elem.element.borrow_mut())
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct Layout {
-    v: VecDeque<LayoutElement>,
+    v: Vec<Element>,
 }
 
 impl Layout {
     pub(crate) fn empty() -> Self {
-        Self { v: VecDeque::new() }
+        Self { v: vec![] }
     }
 
-    pub(crate) fn new(_ctx: &Context, c: LayoutConstructor) -> Self {
+    pub(crate) fn new(_ctx: &Context, mut c: LayoutConstructor) -> Self {
+        c.v.sort_by(|a, b| a.layer.cmp(&b.layer));
         Self { v: c.v }
     }
 
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = &LayoutElement> {
-        self.v.iter()
+    pub fn iter(&self) -> impl Iterator<Item = Ref<LayoutElement>> {
+        self.v.iter().map(|elem| elem.element.borrow())
     }
 
     #[inline]

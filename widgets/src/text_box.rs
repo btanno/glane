@@ -54,12 +54,12 @@ impl HasId for TextBox {
 }
 
 impl Widget for TextBox {
-    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Vec<Event>) {
+    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow {
         match input {
             Input::MouseInput(m) => {
                 if let Some(l) = ctx.layout.iter().find(|l| l.handle().is(self)) {
                     if l.rect().contains(&m.mouse_state.position) {
-                        events.push(Event::new(self, SetFocus));
+                        events.push(self, SetFocus);
                     }
                 }
             }
@@ -87,7 +87,7 @@ impl Widget for TextBox {
                             self.front_text.pop();
                         }
                         _ if c.is_control() => {
-                            return;
+                            return ControlFlow::Continue;
                         }
                         _ => {
                             self.front_text.extend(c.nfc());
@@ -98,18 +98,15 @@ impl Widget for TextBox {
                         .iter()
                         .chain(self.back_text.iter())
                         .collect::<String>();
-                    events.push(Event::new(self, Message::Changed(s)));
+                    events.push(self, Message::Changed(s));
                 }
             }
             Input::ImeBeginComposition => {
                 let cursor = ctx
                     .find_layout(self)
-                    .find(|layout| matches!(layout, LayoutElement::Cursor(_)));
+                    .find(|layout| matches!(&**layout, LayoutElement::Cursor(_)));
                 if let Some(l) = cursor {
-                    events.push(Event::new(
-                        self,
-                        Message::PositionNotify(l.rect().left_bottom()),
-                    ));
+                    events.push(self, Message::PositionNotify(l.rect().left_bottom()));
                 }
             }
             Input::ImeUpdateComposition(composition) => {
@@ -125,13 +122,14 @@ impl Widget for TextBox {
                             .iter()
                             .chain(self.back_text.iter())
                             .collect::<String>();
-                        events.push(Event::new(self, Message::Changed(s)));
+                        events.push(self, Message::Changed(s));
                     }
                 }
                 self.composition = None;
             }
             _ => {}
         }
+        ControlFlow::Continue
     }
 
     fn apply(&mut self, funcs: &mut ApplyFuncs) {
@@ -187,7 +185,7 @@ impl Widget for TextBox {
             .as_ref()
             .unwrap_or_else(|| lc.ctx.default_font.as_ref().unwrap());
         let mut rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
-        result.push_back(LayoutElement::area(self, self.widget_state, rect));
+        result.push(&lc, LayoutElement::area(self, self.widget_state, rect));
         rect.left += self.style.padding.left;
         rect.top += self.style.padding.top;
         rect.right -= self.style.padding.right;
@@ -202,7 +200,7 @@ impl Widget for TextBox {
             ),
         );
         if !self.front_text.is_empty() {
-            result.push_back(LayoutElement::text(
+            result.push(&lc, LayoutElement::text(
                 self,
                 self.widget_state,
                 rect,
@@ -223,12 +221,12 @@ impl Widget for TextBox {
                             text_rect.bottom - text_rect.top,
                         ),
                     );
-                    result.push_back(LayoutElement::composition_text(
+                    result.push(&lc, LayoutElement::composition_text(
                         self,
                         self.widget_state,
                         rect,
                         text,
-                        clause.targeted
+                        clause.targeted,
                     ));
                 }
                 let text_rect = if let Some(clause) =
@@ -253,13 +251,13 @@ impl Widget for TextBox {
                     ),
                     LogicalSize::new(2.0, rect.bottom - rect.top),
                 );
-                result.push_back(LayoutElement::cursor(self, self.widget_state, cursor_rect));
+                result.push(&lc, LayoutElement::cursor(self, self.widget_state, cursor_rect));
             } else {
                 let cursor_rect = LogicalRect::from_position_size(
                     LogicalPosition::new(rect.right, rect.top),
                     LogicalSize::new(2.0, rect.bottom - rect.top),
                 );
-                result.push_back(LayoutElement::cursor(self, self.widget_state, cursor_rect));
+                result.push(&lc, LayoutElement::cursor(self, self.widget_state, cursor_rect));
             }
         }
         if !self.back_text.is_empty() {
@@ -272,7 +270,7 @@ impl Widget for TextBox {
                     back_rect.bottom - back_rect.top,
                 ),
             );
-            result.push_back(LayoutElement::text(
+            result.push(&lc, LayoutElement::text(
                 self,
                 self.widget_state,
                 rect,

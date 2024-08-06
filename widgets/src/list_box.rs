@@ -54,6 +54,16 @@ impl ListBox {
     }
 
     #[inline]
+    pub fn clear(&mut self) {
+        let mut vertical_bar = self.vertical_bar.borrow_mut();
+        vertical_bar.len = 0;
+        vertical_bar.thumb.len = 0;
+        self.first_view_element.set(0);
+        self.selected = None;
+        self.children.clear();
+    }
+
+    #[inline]
     pub fn select(&mut self, index: Option<usize>) {
         let Some(index) = index else {
             self.selected = None;
@@ -61,6 +71,16 @@ impl ListBox {
         };
         assert!(index < self.children.len());
         self.selected = Some(index);
+    }
+
+    #[inline]
+    pub fn child(&self, index: usize) -> Option<&dyn Widget> {
+        (index < self.children.len()).then(|| self.children[index].object.as_ref())
+    }
+
+    #[inline]
+    pub fn selected_child(&self) -> Option<&dyn Widget> {
+        self.selected.map(|i| self.children[i].object.as_ref())
     }
 }
 
@@ -71,13 +91,13 @@ impl HasId for ListBox {
 }
 
 impl Widget for ListBox {
-    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Vec<Event>) {
+    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow {
         let mut layout = ctx.find_layout(self);
-        let Some(area) = layout.find(|l| matches!(l, LayoutElement::ClippedArea(_))) else {
-            return;
+        let Some(area) = layout.find(|l| matches!(&**l, LayoutElement::ClippedArea(_))) else {
+            return ControlFlow::Continue;
         };
         let Some(bar) = ctx.find_layout(&*self.vertical_bar.borrow()).next() else {
-            return;
+            return ControlFlow::Continue;
         };
         match input {
             Input::MouseInput(m) => {
@@ -105,7 +125,7 @@ impl Widget for ListBox {
             }
             _ => {}
         }
-        self.vertical_bar.borrow_mut().input(ctx, input, events);
+        self.vertical_bar.borrow_mut().input(ctx, input, events)
     }
 
     fn apply(&mut self, funcs: &mut ApplyFuncs) {
@@ -141,12 +161,15 @@ impl Widget for ListBox {
             );
             if rect.is_crossing(&viewport) {
                 if self.selected.map_or(false, |selected| selected == i) {
-                    layout.push_back(LayoutElement::selected_area(self, WidgetState::None, rect));
+                    layout.push(
+                        &lc,
+                        LayoutElement::selected_area(self, WidgetState::None, rect),
+                    );
                 }
                 if first_view_element.is_none() {
                     first_view_element = Some(i);
                 }
-                child.object.layout(lc.next(rect), &mut layout);
+                child.object.layout(lc.next(rect, lc.layer), &mut layout);
                 let d = if padding_rect.top > rect.top {
                     padding_rect.top - rect.top
                 } else if padding_rect.bottom < rect.bottom {
@@ -167,23 +190,23 @@ impl Widget for ListBox {
             bar.thumb.len = (thumb_height.ceil()) as usize;
             bar.len = total_size.height.ceil() as usize;
         }
-        result.push_back(LayoutElement::clipped_area(
-            self,
-            WidgetState::None,
-            lc.rect,
-            lc.ctx,
-            layout,
-        ));
+        result.push(
+            &lc,
+            LayoutElement::clipped_area(self, WidgetState::None, lc.rect, lc.ctx, layout),
+        );
         {
             let bar = self.vertical_bar.borrow();
             let size = bar.size(&lc);
             bar.layout(
-                lc.next(LogicalRect::new(
-                    lc.rect.right - size.width - self.style.padding.right,
-                    lc.rect.top + self.style.padding.top,
-                    lc.rect.right - self.style.padding.right,
-                    lc.rect.bottom - self.style.padding.bottom,
-                )),
+                lc.next(
+                    LogicalRect::new(
+                        lc.rect.right - size.width - self.style.padding.right,
+                        lc.rect.top + self.style.padding.top,
+                        lc.rect.right - self.style.padding.right,
+                        lc.rect.bottom - self.style.padding.bottom,
+                    ),
+                    lc.layer,
+                ),
                 result,
             );
         }
