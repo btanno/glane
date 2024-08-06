@@ -175,7 +175,6 @@ impl Canvas {
                 if l.handle().type_id() == self.list_box_type {
                     cmd.push_clip(rect);
                     cmd.fill(
-
                         &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
                         &self.list_box_bg,
                     );
@@ -265,36 +264,27 @@ fn main() -> anyhow::Result<()> {
         root.max_height = Some(200.0);
         glane::Scene::new(root)
     };
-    let row = glane::push_child(&mut scene, &root, glane::widgets::Row::new());
-    glane::push_child(&mut scene, &row, glane::widgets::Label::new("Button"));
-    let button = glane::push_child(&mut scene, &row, glane::widgets::Button::new("Push"));
-    let row1 = glane::push_child(&mut scene, &root, glane::widgets::Row::new());
-    glane::push_child(&mut scene, &row1, glane::widgets::Label::new("TextBox"));
-    let text_box = glane::push_child(&mut scene, &row1, glane::widgets::TextBox::new());
-    let row2 = glane::push_child(&mut scene, &root, glane::widgets::Row::new());
-    glane::push_child(&mut scene, &row2, glane::widgets::Label::new("ScrollBar"));
-    let scroll_bar = glane::push_child(&mut scene, &row2, glane::widgets::ScrollBar::new(100, 10));
-    let scroll_bar2 =
-        glane::push_child(&mut scene, &row2, glane::widgets::ScrollBar::new(1000, 10));
-    let row4 = glane::push_child(&mut scene, &root, glane::widgets::Row::new());
-    glane::push_child(&mut scene, &row4, glane::widgets::Label::new("DropdownBox"));
-    let dropdown_box = glane::push_child(&mut scene, &row4, glane::widgets::DropdownBox::new());
+    let row = scene.push_child(&root, glane::widgets::Row::new());
+    scene.push_child(&row, glane::widgets::Label::new("Button"));
+    let button = scene.push_child(&row, glane::widgets::Button::new("Push"));
+    let row1 = scene.push_child(&root, glane::widgets::Row::new());
+    scene.push_child(&row1, glane::widgets::Label::new("TextBox"));
+    let text_box = scene.push_child(&row1, glane::widgets::TextBox::new());
+    let row2 = scene.push_child(&root, glane::widgets::Row::new());
+    scene.push_child(&row2, glane::widgets::Label::new("ScrollBar"));
+    let scroll_bar = scene.push_child(&row2, glane::widgets::ScrollBar::new(100, 10));
+    let scroll_bar2 = scene.push_child(&row2, glane::widgets::ScrollBar::new(1000, 10));
+    let row4 = scene.push_child(&root, glane::widgets::Row::new());
+    scene.push_child(&row4, glane::widgets::Label::new("DropdownBox"));
+    let dropdown_box = scene.push_child(&row4, glane::widgets::DropdownBox::new());
     for c in 'A'..='C' {
-        glane::push_child(
-            &mut scene,
-            &dropdown_box,
-            glane::widgets::Text::new(c.to_string()),
-        );
+        scene.push_child(&dropdown_box, glane::widgets::Text::new(c.to_string()));
     }
-    let row3 = glane::push_child(&mut scene, &root, glane::widgets::Row::new());
-    glane::push_child(&mut scene, &row3, glane::widgets::Label::new("ListBox"));
-    let list_box = glane::push_child(&mut scene, &row3, glane::widgets::ListBox::new());
+    let row3 = scene.push_child(&root, glane::widgets::Row::new());
+    scene.push_child(&row3, glane::widgets::Label::new("ListBox"));
+    let list_box = scene.push_child(&row3, glane::widgets::ListBox::new());
     for c in 'a'..='z' {
-        glane::push_child(
-            &mut scene,
-            &list_box,
-            glane::widgets::Text::new(c.to_string()),
-        );
+        scene.push_child(&list_box, glane::widgets::Text::new(c.to_string()));
     }
     let layout = scene.layout();
     println!("{layout:?}");

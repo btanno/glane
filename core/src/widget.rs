@@ -194,22 +194,3 @@ pub trait HasChildren {
     }
 }
 
-#[inline]
-pub fn push_child<T, U>(scene: &mut Scene, parent: &Handle<T>, child: U) -> Handle<U>
-where
-    T: Widget + HasChildren,
-    U: Widget,
-{
-    let handle = Handle::new(&child);
-    scene.apply(parent, move |r| r.push(child));
-    handle
-}
-
-#[inline]
-pub fn erase_child<T, U>(scene: &mut Scene, parent: &Handle<T>, child: Handle<U>)
-where
-    T: Widget + HasChildren,
-    U: Widget,
-{
-    scene.apply(parent, move |r| r.erase(child));
-}
