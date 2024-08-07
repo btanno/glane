@@ -86,8 +86,14 @@ pub fn state_changed_exists(v: &Vec<Event>) -> bool {
 pub struct Events(Vec<Event>);
 
 impl Events {
-    pub(crate) fn new() -> Self {
+    #[inline]
+    pub fn new() -> Self {
         Self(vec![])
+    }
+
+    #[inline]
+    pub fn clear(&mut self) {
+        self.0.clear();
     }
 
     #[inline]
@@ -147,3 +153,4 @@ impl Events {
         self.0.iter_mut()
     }
 }
+

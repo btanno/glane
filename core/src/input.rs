@@ -45,9 +45,11 @@ pub struct Composition {
 }
 
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub enum Input {
     MouseInput(MouseInput),
     CursorMoved(CursorMoved),
+    MouseWheel(MouseWheel),
     KeyInput(KeyInput),
     CharInput(char),
     ImeBeginComposition,

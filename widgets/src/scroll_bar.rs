@@ -72,6 +72,7 @@ pub struct ScrollBar {
 }
 
 impl ScrollBar {
+    #[inline]
     pub fn new(len: usize, thumb_len: usize) -> Self {
         Self {
             id: Id::new(),
@@ -83,16 +84,29 @@ impl ScrollBar {
         }
     }
 
+    #[inline]
     pub fn current(&self) -> usize {
         self.current
     }
 
-    pub fn add(&mut self, d: usize) {
-        self.current += d;
-    }
-
-    pub fn sub(&mut self, d: usize) {
-        self.current -= d;
+    #[inline]
+    pub fn advance(&mut self, d: isize) {
+        if d > 0 {
+            let max = self.len - self.thumb.len;
+            let d = d as usize;
+            if self.current + d >= max {
+                self.current = max;
+            } else {
+                self.current += d;
+            }
+        } else if d < 0 {
+            let d = -d as usize;
+            if self.current <= d {
+                self.current = 0;
+            } else {
+                self.current -= d;
+            }
+        }
     }
 }
 

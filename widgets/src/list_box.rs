@@ -38,6 +38,8 @@ pub struct ListBox {
     vertical_bar: RefCell<ScrollBar>,
     first_view_element: Cell<usize>,
     selected: Option<usize>,
+    widget_state: WidgetState,
+    min_height: Cell<f32>,
 }
 
 impl ListBox {
@@ -50,6 +52,8 @@ impl ListBox {
             vertical_bar: RefCell::new(ScrollBar::new(0, 0)),
             first_view_element: Cell::new(0),
             selected: None,
+            widget_state: WidgetState::None,
+            min_height: Cell::new(f32::MAX),
         }
     }
 
@@ -82,6 +86,14 @@ impl ListBox {
     pub fn selected_child(&self) -> Option<&dyn Widget> {
         self.selected.map(|i| self.children[i].object.as_ref())
     }
+
+    #[inline]
+    pub fn erase_selected(&mut self) {
+        if let Some(index) = self.selected {
+            self.children.remove(index);
+            self.selected = None;
+        }
+    }
 }
 
 impl HasId for ListBox {
@@ -102,25 +114,50 @@ impl Widget for ListBox {
         match input {
             Input::MouseInput(m) => {
                 if m.button == MouseButton::Left && m.button_state == ButtonState::Pressed {
-                    let mut i = self.first_view_element.get();
-                    let mut height = 0.0;
-                    while i < self.children.len() && height < area.rect().size().height {
-                        let element = &self.children[i];
-                        let element_rect = element.rect.get().map(|r| {
-                            LogicalRect::new(
-                                r.left,
-                                r.top,
-                                r.right - bar.rect().size().width,
-                                r.bottom,
-                            )
-                        });
-                        if element_rect.map_or(false, |r| r.contains(&m.mouse_state.position)) {
-                            self.selected = Some(i);
-                            break;
+                    if area.rect().is_crossing(&m.mouse_state.position) {
+                        let mut i = self.first_view_element.get();
+                        let mut height = 0.0;
+                        while i < self.children.len() && height < area.rect().size().height {
+                            let element = &self.children[i];
+                            let element_rect = element.rect.get().map(|r| {
+                                LogicalRect::new(
+                                    r.left,
+                                    r.top,
+                                    r.right - bar.rect().size().width,
+                                    r.bottom,
+                                )
+                            });
+                            if element_rect.map_or(false, |r| r.contains(&m.mouse_state.position)) {
+                                self.selected = Some(i);
+                                break;
+                            }
+                            i += 1;
+                            height += element.rect.get().map_or(0.0, |r| r.size().height);
                         }
-                        i += 1;
-                        height += element.rect.get().map_or(0.0, |r| r.size().height);
                     }
+                }
+            }
+            Input::CursorMoved(m) => {
+                if area.rect().is_crossing(&m.mouse_state.position) {
+                    if m.mouse_state.buttons.contains(MouseButton::Left) {
+                        self.widget_state = events.push_state_changed(
+                            self,
+                            WidgetState::Pressed,
+                            self.widget_state,
+                        );
+                    } else {
+                        self.widget_state =
+                            events.push_state_changed(self, WidgetState::Hover, self.widget_state);
+                    }
+                } else {
+                    self.widget_state =
+                        events.push_state_changed(self, WidgetState::None, self.widget_state);
+                }
+            }
+            Input::MouseWheel(m) => {
+                if area.rect().is_crossing(&m.mouse_state.position) {
+                    let mut vbar = self.vertical_bar.borrow_mut();
+                    vbar.advance(self.min_height.get() as isize * m.distance as isize);
                 }
             }
             _ => {}
@@ -153,8 +190,10 @@ impl Widget for ListBox {
         let mut total_size = LogicalSize::new(padding_rect.size().width, 0.0);
         let mut thumb_height = 0.0;
         let mut first_view_element = None;
+        self.min_height.set(f32::MAX);
         for (i, child) in self.children.iter().enumerate() {
             let size = child.object.size(&lc);
+            self.min_height.set(self.min_height.get().min(size.height));
             rect = LogicalRect::from_position_size(
                 rect.left_top(),
                 (padding_rect.size().width, size.height),

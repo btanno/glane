@@ -45,6 +45,12 @@ impl TextBox {
             composition: None,
         }
     }
+
+    #[inline]
+    pub fn clear(&mut self) {
+        self.front_text.clear();
+        self.back_text.clear();
+    }
 }
 
 impl HasId for TextBox {

@@ -48,6 +48,7 @@ pub struct Cursor {
 }
 
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub enum LayoutElement {
     Area(Area),
     SelectedArea(SelectedArea),
