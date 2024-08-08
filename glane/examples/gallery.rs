@@ -22,10 +22,17 @@ fn mouse_buttons(src: &wiard::MouseButtons) -> glane::MouseButtons {
     dest
 }
 
-fn mouse_input(m: &wiard::event::MouseInput, dpi: f32) -> glane::MouseInput {
-    let position = m.mouse_state.position;
+fn mouse_state(m: &wiard::MouseState, dpi: f32) -> glane::MouseState {
+    let position = m.position;
     let position =
         wiard::PhysicalPosition::new(position.x as f32, position.y as f32).to_logical(dpi);
+    glane::MouseState {
+        position,
+        buttons: mouse_buttons(&m.buttons),
+    }
+}
+
+fn mouse_input(m: &wiard::event::MouseInput, dpi: f32) -> glane::MouseInput {
     glane::MouseInput {
         button: match m.button {
             wiard::MouseButton::Left => glane::MouseButton::Left,
@@ -37,10 +44,18 @@ fn mouse_input(m: &wiard::event::MouseInput, dpi: f32) -> glane::MouseInput {
             wiard::ButtonState::Pressed => glane::ButtonState::Pressed,
             wiard::ButtonState::Released => glane::ButtonState::Released,
         },
-        mouse_state: glane::MouseState {
-            position,
-            buttons: mouse_buttons(&m.mouse_state.buttons),
+        mouse_state: mouse_state(&m.mouse_state, dpi),
+    }
+}
+
+fn mouse_wheel(m: &wiard::event::MouseWheel, dpi: f32) -> glane::MouseWheel {
+    glane::MouseWheel {
+        axis: match m.axis {
+            wiard::MouseWheelAxis::Vertical => glane::MouseWheelAxis::Vertical,
+            wiard::MouseWheelAxis::Horizontal => glane::MouseWheelAxis::Horizontal,
         },
+        distance: -m.distance / wiard::WHEEL_DELTA,
+        mouse_state: mouse_state(&m.mouse_state, dpi),
     }
 }
 
@@ -307,55 +322,26 @@ fn main() -> anyhow::Result<()> {
                     continue;
                 };
                 let input = mouse_input(&m, dpi as f32);
-                let events = scene.input(glane::Input::MouseInput(input));
-                for event in events.iter() {
-                    if let Some(msg) = event.message(&button) {
-                        if msg == &glane::widgets::button::Message::Clicked {
-                            println!("button clicked");
-                        }
-                    } else if let Some(msg) = event.message(&text_box) {
-                        match msg {
-                            glane::widgets::text_box::Message::Changed(s) => {
-                                println!("text_box changed: {s}");
-                            }
-                            _ => {}
-                        }
-                    }
-                }
+                scene.input(glane::Input::MouseInput(input));
                 redraw(&window);
             }
             wiard::Event::CursorMoved(m) => {
                 let Some(dpi) = window.dpi() else {
                     continue;
                 };
-                let position = m.mouse_state.position;
-                let position = wiard::PhysicalPosition::new(position.x as f32, position.y as f32)
-                    .to_logical(dpi as f32);
-                let mouse_state = glane::MouseState {
-                    position,
-                    buttons: mouse_buttons(&m.mouse_state.buttons),
-                };
-                let events = scene.input(glane::Input::CursorMoved(glane::CursorMoved {
-                    mouse_state,
+                scene.input(glane::Input::CursorMoved(glane::CursorMoved {
+                    mouse_state: mouse_state(&m.mouse_state, dpi as f32),
                 }));
-                for event in events.iter() {
-                    if let Some(msg) = event.message(&scroll_bar) {
-                        match msg {
-                            glane::widgets::scroll_bar::Message::Changed(p) => {
-                                println!("scrollbar changed: {p}-{}", p + 10);
-                            }
-                        }
-                    } else if let Some(msg) = event.message(&scroll_bar2) {
-                        match msg {
-                            glane::widgets::scroll_bar::Message::Changed(p) => {
-                                println!("scrollbar2 changed: {p}-{}", p + 10);
-                            }
-                        }
-                    }
-                }
-                if !events.is_empty() {
+                if !scene.events().is_empty() {
                     redraw(&window);
                 }
+            }
+            wiard::Event::MouseWheel(ev) => {
+                let Some(dpi) = window.dpi() else {
+                    continue;
+                };
+                scene.input(glane::Input::MouseWheel(mouse_wheel(&ev, dpi as f32)));
+                redraw(&window);
             }
             wiard::Event::KeyInput(ev) => {
                 scene.input(glane::Input::KeyInput(glane::KeyInput {
@@ -417,6 +403,32 @@ fn main() -> anyhow::Result<()> {
                 redraw(&window);
             }
             _ => {}
+        }
+        for event in scene.events().iter() {
+            if let Some(msg) = event.message(&button) {
+                if msg == &glane::widgets::button::Message::Clicked {
+                    println!("button clicked");
+                }
+            } else if let Some(msg) = event.message(&text_box) {
+                match msg {
+                    glane::widgets::text_box::Message::Changed(s) => {
+                        println!("text_box changed: {s}");
+                    }
+                    _ => {}
+                }
+            } else if let Some(msg) = event.message(&scroll_bar) {
+                match msg {
+                    glane::widgets::scroll_bar::Message::Changed(p) => {
+                        println!("scrollbar changed: {p}-{}", p + 10);
+                    }
+                }
+            } else if let Some(msg) = event.message(&scroll_bar2) {
+                match msg {
+                    glane::widgets::scroll_bar::Message::Changed(p) => {
+                        println!("scrollbar2 changed: {p}-{}", p + 10);
+                    }
+                }
+            }
         }
     }
     Ok(())
