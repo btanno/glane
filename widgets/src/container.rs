@@ -52,6 +52,7 @@ where
             lc.next(
                 LogicalRect::from_positions(self.position, lc.rect.right_bottom()),
                 lc.layer,
+                lc.selected,
             ),
             result,
         );
@@ -125,6 +126,7 @@ impl Widget for Column {
                         LogicalSize::new(size.width, s.height),
                     ),
                     lc.layer,
+                    lc.selected,
                 ),
                 result,
             );
@@ -212,7 +214,7 @@ impl Widget for Row {
         let size = self.size(&lc);
         let mut rect = lc.rect;
         for child in self.children.iter() {
-            let s = child.size(&lc.next(rect, lc.layer));
+            let s = child.size(&lc.next(rect, lc.layer, lc.selected));
             let h = (size.height - s.height) / 2.0;
             let r = rect.left + s.width;
             let rb = LogicalPosition::new(
@@ -223,6 +225,7 @@ impl Widget for Row {
                 lc.next(
                     LogicalRect::from_positions(LogicalPosition::new(rect.left, rect.top + h), rb),
                     lc.layer,
+                    lc.selected,
                 ),
                 result,
             );

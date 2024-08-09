@@ -122,14 +122,14 @@ impl Widget for DropdownBox {
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
         let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
-        result.push(&lc, LayoutElement::area(self, self.widget_state, rect));
+        result.push(&lc, LayoutElement::area(self, self.widget_state, rect, false));
         if let Some(child) = self.list.selected_child() {
-            child.layout(lc.next(rect, lc.layer), result);
+            child.layout(lc.next(rect, lc.layer, lc.selected), result);
         }
         if self.list_visiblity {
             let size = LogicalSize::new(size.width, 100.0);
             let rect = LogicalRect::from_position_size(lc.rect.left_bottom(), size);
-            self.list.layout(lc.next(rect, lc.layer + 1), result);
+            self.list.layout(lc.next(rect, lc.layer + 1, lc.selected), result);
         }
     }
 }

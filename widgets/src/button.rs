@@ -88,7 +88,7 @@ impl Widget for Button {
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
         let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
-        result.push(&lc, LayoutElement::area(self, self.state, rect));
+        result.push(&lc, LayoutElement::area(self, self.state, rect, false));
         let rect = LogicalRect::new(
             rect.left + self.style.padding.left,
             rect.top + self.style.padding.top,
@@ -97,7 +97,7 @@ impl Widget for Button {
         );
         result.push(
             &lc,
-            LayoutElement::text(self, self.state, rect, self.text.clone()),
+            LayoutElement::text(self, self.state, rect, self.text.clone(), false),
         );
     }
 }

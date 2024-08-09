@@ -119,7 +119,17 @@ impl Canvas {
 
     fn draw_element(&self, cmd: &pnte::DrawCommand<pnte::Direct2D>, l: &glane::LayoutElement) {
         match l {
-            glane::LayoutElement::Area(_) => {
+            glane::LayoutElement::Area(area) => {
+                if area.selected {
+                    let rect = pnte::Rect::new(
+                        area.rect.left,
+                        area.rect.top,
+                        area.rect.right,
+                        area.rect.bottom,
+                    );
+                    cmd.fill(&rect, &self.selected_bg);
+                    return;
+                }
                 if l.handle().type_id() == TypeId::of::<Button>() {
                     let brush = match l.widget_state() {
                         glane::WidgetState::None => &self.button_bg,
@@ -153,15 +163,6 @@ impl Canvas {
                     );
                 }
             }
-            glane::LayoutElement::SelectedArea(area) => {
-                let rect = pnte::Rect::new(
-                    area.rect.left,
-                    area.rect.top,
-                    area.rect.right,
-                    area.rect.bottom,
-                );
-                cmd.fill(&rect, &self.selected_bg);
-            }
             glane::LayoutElement::ClippedArea(area) => {
                 let rect = area.rect;
                 let rect = pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
@@ -192,13 +193,6 @@ impl Canvas {
                     cmd.stroke(&rect, &self.border_color, 2.0, None);
                 }
             }
-            glane::LayoutElement::Cursor(_) => {
-                let rect = l.rect();
-                cmd.fill(
-                    &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                    &self.text_color,
-                );
-            }
             glane::LayoutElement::Text(t) => {
                 let text = pnte::TextLayout::new(&self.ctx)
                     .text(&t.string)
@@ -225,6 +219,13 @@ impl Canvas {
                     &self.text_color,
                     width,
                     None,
+                );
+            }
+            glane::LayoutElement::Cursor(_) => {
+                let rect = l.rect();
+                cmd.fill(
+                    &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                    &self.text_color,
                 );
             }
             _ => {}

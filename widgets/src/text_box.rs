@@ -191,7 +191,7 @@ impl Widget for TextBox {
             .as_ref()
             .unwrap_or_else(|| lc.ctx.default_font.as_ref().unwrap());
         let mut rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
-        result.push(&lc, LayoutElement::area(self, self.widget_state, rect));
+        result.push(&lc, LayoutElement::area(self, self.widget_state, rect, false));
         rect.left += self.style.padding.left;
         rect.top += self.style.padding.top;
         rect.right -= self.style.padding.right;
@@ -211,6 +211,7 @@ impl Widget for TextBox {
                 self.widget_state,
                 rect,
                 front_text,
+                false,
             ));
         }
         if lc.ctx.has_focus(self) {
@@ -281,6 +282,7 @@ impl Widget for TextBox {
                 self.widget_state,
                 rect,
                 back_text,
+                false,
             ));
         }
     }

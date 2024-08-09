@@ -133,7 +133,17 @@ impl Canvas {
 
     fn draw_element<T: pnte::Backend>(&self, cmd: &pnte::DrawCommand<T>, l: &glane::LayoutElement) {
         match l {
-            glane::LayoutElement::Area(_) => {
+            glane::LayoutElement::Area(area) => {
+                if area.selected {
+                    let rect = pnte::Rect::new(
+                        area.rect.left,
+                        area.rect.top,
+                        area.rect.right,
+                        area.rect.bottom,
+                    );
+                    cmd.fill(&rect, &self.selected_bg);
+                    return;
+                }
                 if l.handle().type_id() == self.button_type {
                     let brush = match l.widget_state() {
                         glane::WidgetState::None => &self.button_bg,
@@ -175,15 +185,6 @@ impl Canvas {
                     );
                 }
             }
-            glane::LayoutElement::SelectedArea(area) => {
-                let rect = pnte::Rect::new(
-                    area.rect.left,
-                    area.rect.top,
-                    area.rect.right,
-                    area.rect.bottom,
-                );
-                cmd.fill(&rect, &self.selected_bg);
-            }
             glane::LayoutElement::ClippedArea(area) => {
                 let rect = area.rect;
                 let rect = pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
@@ -214,13 +215,6 @@ impl Canvas {
                     cmd.stroke(&rect, &self.white, 2.0, None);
                 }
             }
-            glane::LayoutElement::Cursor(_) => {
-                let rect = l.rect();
-                cmd.fill(
-                    &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                    &self.white,
-                );
-            }
             glane::LayoutElement::Text(t) => {
                 let text = pnte::TextLayout::new(&self.ctx)
                     .text(&t.string)
@@ -247,6 +241,13 @@ impl Canvas {
                     &self.white,
                     width,
                     None,
+                );
+            }
+            glane::LayoutElement::Cursor(_) => {
+                let rect = l.rect();
+                cmd.fill(
+                    &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                    &self.white,
                 );
             }
             _ => {}
@@ -302,8 +303,6 @@ fn main() -> anyhow::Result<()> {
     for c in 'a'..='z' {
         scene.push_child(&list_box, glane::widgets::Text::new(c.to_string()));
     }
-    let layout = scene.layout();
-    println!("{layout:?}");
     let mut canvas = Canvas::new(&window, &scene)?;
     let redrawing = Rc::new(Cell::new(false));
     let redraw = |window: &wiard::Window| {

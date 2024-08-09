@@ -61,6 +61,7 @@ impl Widget for Text {
             WidgetState::None,
             LogicalRect::from_position_size(lc.rect.left_top(), size),
             self.text.clone(),
+            false,
         ));
     }
 }

@@ -203,16 +203,17 @@ impl Widget for ListBox {
                 (padding_rect.size().width, size.height),
             );
             if rect.is_crossing(&viewport) {
-                if self.selected.map_or(false, |selected| selected == i) {
+                let selected = self.selected.map_or(false, |selected| selected == i);
+                if selected {
                     layout.push(
                         &lc,
-                        LayoutElement::selected_area(self, WidgetState::None, rect),
+                        LayoutElement::area(self, WidgetState::None, rect, true),
                     );
                 }
                 if first_view_element.is_none() {
                     first_view_element = Some(i);
                 }
-                child.object.layout(lc.next(rect, lc.layer), &mut layout);
+                child.object.layout(lc.next(rect, lc.layer, selected), &mut layout);
                 let d = if padding_rect.top > rect.top {
                     padding_rect.top - rect.top
                 } else if padding_rect.bottom < rect.bottom {
@@ -235,7 +236,7 @@ impl Widget for ListBox {
         }
         result.push(
             &lc,
-            LayoutElement::clipped_area(self, WidgetState::None, lc.rect, lc.ctx, layout),
+            LayoutElement::clipped_area(self, WidgetState::None, lc.rect, lc.ctx, layout, false),
         );
         {
             let bar = self.vertical_bar.borrow();
@@ -249,6 +250,7 @@ impl Widget for ListBox {
                         lc.rect.bottom - self.style.padding.bottom,
                     ),
                     lc.layer,
+                    lc.selected,
                 ),
                 result,
             );
