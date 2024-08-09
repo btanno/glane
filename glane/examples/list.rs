@@ -272,27 +272,32 @@ fn main() -> anyhow::Result<()> {
             redrawing.set(true);
         }
     };
+    let mut events = glane::Events::new();
     loop {
         let Some((event, _)) = event_rx.recv() else {
             break;
         };
+        events.clear();
         match event {
             wiard::Event::MouseInput(m) => {
                 let Some(dpi) = window.dpi() else {
                     continue;
                 };
                 let input = mouse_input(&m, dpi as f32);
-                scene.input(glane::Input::MouseInput(input));
+                scene.input(glane::Input::MouseInput(input), &mut events);
                 redraw(&window);
             }
             wiard::Event::CursorMoved(m) => {
                 let Some(dpi) = window.dpi() else {
                     continue;
                 };
-                scene.input(glane::Input::CursorMoved(glane::CursorMoved {
-                    mouse_state: mouse_state(&m.mouse_state, dpi as f32),
-                }));
-                if !scene.events().is_empty() {
+                scene.input(
+                    glane::Input::CursorMoved(glane::CursorMoved {
+                        mouse_state: mouse_state(&m.mouse_state, dpi as f32),
+                    }),
+                    &mut events,
+                );
+                if !events.is_empty() {
                     redraw(&window);
                 }
             }
@@ -300,27 +305,29 @@ fn main() -> anyhow::Result<()> {
                 let Some(dpi) = window.dpi() else {
                     continue;
                 };
-                scene.input(glane::Input::MouseWheel(mouse_wheel(&m, dpi as f32)));
+                scene.input(
+                    glane::Input::MouseWheel(mouse_wheel(&m, dpi as f32)),
+                    &mut events,
+                );
                 redraw(&window);
             }
             wiard::Event::KeyInput(ev) => {
-                scene.input(glane::Input::KeyInput(glane::KeyInput {
-                    vkey: ev.key_code.vkey,
-                    key_state: ev.key_state,
-                }));
+                scene.input(
+                    glane::Input::KeyInput(glane::KeyInput {
+                        vkey: ev.key_code.vkey,
+                        key_state: ev.key_state,
+                    }),
+                    &mut events,
+                );
                 redraw(&window);
             }
             wiard::Event::CharInput(ev) => {
-                scene.input(glane::Input::CharInput(ev.c));
+                scene.input(glane::Input::CharInput(ev.c), &mut events);
                 redraw(&window);
             }
             wiard::Event::ImeBeginComposition(ev) => {
-                scene.input(glane::Input::ImeBeginComposition);
-                if let Some(event) = scene
-                    .events()
-                    .iter()
-                    .find_map(|event| event.message(&add_text))
-                {
+                scene.input(glane::Input::ImeBeginComposition, &mut events);
+                if let Some(event) = events.iter().find_map(|event| event.message(&add_text)) {
                     if let text_box::Message::PositionNotify(position) = event {
                         ev.set_position(wiard::LogicalPosition::new(
                             position.x as i32,
@@ -331,22 +338,25 @@ fn main() -> anyhow::Result<()> {
                 redraw(&window);
             }
             wiard::Event::ImeUpdateComposition(ev) => {
-                scene.input(glane::Input::ImeUpdateComposition(glane::Composition {
-                    chars: ev.chars,
-                    clauses: ev
-                        .clauses
-                        .into_iter()
-                        .map(|clause| glane::Clause {
-                            range: clause.range,
-                            targeted: clause.targeted,
-                        })
-                        .collect(),
-                    cursor_position: ev.cursor_position,
-                }));
+                scene.input(
+                    glane::Input::ImeUpdateComposition(glane::Composition {
+                        chars: ev.chars,
+                        clauses: ev
+                            .clauses
+                            .into_iter()
+                            .map(|clause| glane::Clause {
+                                range: clause.range,
+                                targeted: clause.targeted,
+                            })
+                            .collect(),
+                        cursor_position: ev.cursor_position,
+                    }),
+                    &mut events,
+                );
                 redraw(&window);
             }
             wiard::Event::ImeEndComposition(ev) => {
-                scene.input(glane::Input::ImeEndComposition(ev.result));
+                scene.input(glane::Input::ImeEndComposition(ev.result), &mut events);
                 redraw(&window);
             }
             wiard::Event::Draw(_) => {
@@ -368,7 +378,7 @@ fn main() -> anyhow::Result<()> {
             }
             _ => {}
         }
-        for event in scene.events().iter() {
+        for event in events.iter() {
             if let Some(msg) = event.message(&add_button) {
                 if *msg == button::Message::Clicked {
                     if let Some(text) = text.take() {

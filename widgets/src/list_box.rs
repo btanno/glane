@@ -14,7 +14,7 @@ impl Default for Style {
 }
 
 pub enum Message {
-    Changed(usize),
+    Selected(usize),
 }
 
 struct Child {
@@ -129,12 +129,8 @@ impl Widget for ListBox {
                                 )
                             });
                             if element_rect.map_or(false, |r| r.contains(&m.mouse_state.position)) {
-                                if let Some(selected) = self.selected {
-                                    if i != selected {
-                                        self.selected = Some(i);
-                                        events.push_message(self, Message::Changed(i));
-                                    }
-                                }
+                                events.push_message(self, Message::Selected(i));
+                                self.selected = Some(i);
                                 break;
                             }
                             i += 1;

@@ -144,12 +144,12 @@ impl Events {
     }
 
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = &Event> {
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &Event> {
         self.0.iter()
     }
 
     #[inline]
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Event> {
+    pub fn iter_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Event> {
         self.0.iter_mut()
     }
 }

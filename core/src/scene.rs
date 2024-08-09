@@ -1,6 +1,6 @@
 use super::*;
 use std::any::Any;
-use std::cell::{RefCell, Ref};
+use std::cell::Ref;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -73,8 +73,7 @@ pub struct Scene {
     ctx: Context,
     root: Box<dyn Widget>,
     prev_input: Option<Input>,
-    apply_funcs: RefCell<ApplyFuncs>,
-    events: Events,
+    apply_funcs: ApplyFuncs,
 }
 
 impl Scene {
@@ -94,8 +93,7 @@ impl Scene {
             },
             root,
             prev_input: None,
-            apply_funcs: RefCell::new(ApplyFuncs::new()),
-            events: Events::new(),
+            apply_funcs: ApplyFuncs::new(),
         }, handle)
     }
 
@@ -109,41 +107,37 @@ impl Scene {
         self.ctx.default_font.as_ref()
     }
 
-    pub fn input(&mut self, input: Input) -> &Events {
-        if !self.apply_funcs.borrow().0.is_empty() {
-            let mut apply_funcs = self.apply_funcs.borrow_mut();
-            self.root.apply(&mut apply_funcs);
-            apply_funcs.0.clear();
+    pub fn input(&mut self, input: Input, events: &mut Events) {
+        if !self.apply_funcs.0.is_empty() {
+            self.root.apply(&mut self.apply_funcs);
+            self.apply_funcs.0.clear();
         }
-        self.events.clear();
         self.ctx.prev_input = self.prev_input.take();
-        self.root.input(&self.ctx, &input, &mut self.events);
+        self.root.input(&self.ctx, &input, events);
         if let Input::MouseInput(m) = &input {
             if m.button_state == ButtonState::Pressed {
-                self.ctx.focus = self.events
+                self.ctx.focus = events
                     .iter()
                     .find(|event| event.is_set_focus())
                     .map(|event| event.handle());
             }
         }
         self.prev_input = Some(input);
-        &self.events
     }
 
     #[inline]
-    pub fn apply<T, F>(&self, handle: &Handle<T>, f: F)
+    pub fn apply<T, F>(&mut self, handle: &Handle<T>, f: F)
     where
         T: Widget,
         F: FnOnce(&mut T) + 'static,
     {
-        self.apply_funcs.borrow_mut().push(handle, f);
+        self.apply_funcs.push(handle, f);
     }
 
     pub fn layout(&mut self) -> Arc<Layout> {
-        if !self.apply_funcs.borrow().0.is_empty() {
-            let mut apply_funcs = self.apply_funcs.borrow_mut();
-            self.root.apply(&mut apply_funcs);
-            apply_funcs.0.clear();
+        if !self.apply_funcs.0.is_empty() {
+            self.root.apply(&mut self.apply_funcs);
+            self.apply_funcs.0.clear();
         }
         let mut layout = LayoutConstructor::new();
         self.root.layout(LayoutContext::new(&self.ctx), &mut layout);
@@ -152,12 +146,7 @@ impl Scene {
     }
 
     #[inline]
-    pub fn events(&self) -> &Events {
-        &self.events
-    }
-
-    #[inline]
-    pub fn push_child<T, U>(&self, parent: &Handle<T>, child: U) -> Handle<U>
+    pub fn push_child<T, U>(&mut self, parent: &Handle<T>, child: U) -> Handle<U>
     where
         T: Widget + HasChildren,
         U: Widget,
@@ -168,7 +157,7 @@ impl Scene {
     }
 
     #[inline]
-    pub fn erase_child<T, U>(&self, parent: &Handle<T>, child: Handle<U>)
+    pub fn erase_child<T, U>(&mut self, parent: &Handle<T>, child: Handle<U>)
     where
         T: Widget + HasChildren,
         U: Widget

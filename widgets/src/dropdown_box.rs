@@ -82,6 +82,20 @@ impl Widget for DropdownBox {
         }
         if list_visiblity {
             self.list.input(ctx, input, events);
+            let selected = events
+                .iter()
+                .rev()
+                .find(|event| {
+                    if let Some(msg) = event.message(&Handle::new(&self.list)) {
+                        matches!(msg, list_box::Message::Selected(_))
+                    } else {
+                        false
+                    }
+                })
+                .is_some();
+            if selected {
+                self.list_visiblity = false;
+            }
             ControlFlow::Break
         } else {
             ControlFlow::Continue
