@@ -191,7 +191,10 @@ impl Widget for TextBox {
             .as_ref()
             .unwrap_or_else(|| lc.ctx.default_font.as_ref().unwrap());
         let mut rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
-        result.push(&lc, LayoutElement::area(self, self.widget_state, rect, false));
+        result.push(
+            &lc,
+            LayoutElement::area(self, self.widget_state, rect, lc.selected),
+        );
         rect.left += self.style.padding.left;
         rect.top += self.style.padding.top;
         rect.right -= self.style.padding.right;
@@ -206,15 +209,18 @@ impl Widget for TextBox {
             ),
         );
         if !self.front_text.is_empty() {
-            result.push(&lc, LayoutElement::text(
-                self,
-                self.widget_state,
-                rect,
-                front_text,
-                false,
-            ));
+            result.push(
+                &lc,
+                LayoutElement::text(self, self.widget_state, rect, front_text, lc.selected),
+            );
         }
         if lc.ctx.has_focus(self) {
+            let cursor_char = self.back_text.last().cloned();
+            let cursor_char_size = cursor_char.map(|c| {
+                bounding_box_with_str(&font, &c.to_string()).size()
+            }).unwrap_or_else(|| {
+                bounding_box_with_str(&font, &'m'.to_string()).size()
+            });
             if let Some(ref composition) = self.composition {
                 for clause in composition.clauses.iter() {
                     let text = composition.chars[clause.range.start..clause.range.end]
@@ -228,13 +234,16 @@ impl Widget for TextBox {
                             text_rect.bottom - text_rect.top,
                         ),
                     );
-                    result.push(&lc, LayoutElement::composition_text(
-                        self,
-                        self.widget_state,
-                        rect,
-                        text,
-                        clause.targeted,
-                    ));
+                    result.push(
+                        &lc,
+                        LayoutElement::composition_text(
+                            self,
+                            self.widget_state,
+                            rect,
+                            text,
+                            clause.targeted,
+                        ),
+                    );
                 }
                 let text_rect = if let Some(clause) =
                     composition.clauses.iter().find(|clause| clause.targeted)
@@ -256,15 +265,31 @@ impl Widget for TextBox {
                         lc.rect.left + self.style.padding.left + front_rect.right + text_rect.right,
                         rect.top,
                     ),
-                    LogicalSize::new(2.0, rect.bottom - rect.top),
+                    LogicalSize::new(cursor_char_size.width, rect.bottom - rect.top),
                 );
-                result.push(&lc, LayoutElement::cursor(self, self.widget_state, cursor_rect));
+                result.push(
+                    &lc,
+                    LayoutElement::cursor(
+                        self,
+                        self.widget_state,
+                        cursor_rect,
+                        self.back_text.last().cloned(),
+                    ),
+                );
             } else {
                 let cursor_rect = LogicalRect::from_position_size(
                     LogicalPosition::new(rect.right, rect.top),
-                    LogicalSize::new(2.0, rect.bottom - rect.top),
+                    LogicalSize::new(cursor_char_size.width, rect.bottom - rect.top),
                 );
-                result.push(&lc, LayoutElement::cursor(self, self.widget_state, cursor_rect));
+                result.push(
+                    &lc,
+                    LayoutElement::cursor(
+                        self,
+                        self.widget_state,
+                        cursor_rect,
+                        self.back_text.last().cloned(),
+                    ),
+                );
             }
         }
         if !self.back_text.is_empty() {
@@ -277,13 +302,10 @@ impl Widget for TextBox {
                     back_rect.bottom - back_rect.top,
                 ),
             );
-            result.push(&lc, LayoutElement::text(
-                self,
-                self.widget_state,
-                rect,
-                back_text,
-                false,
-            ));
+            result.push(
+                &lc,
+                LayoutElement::text(self, self.widget_state, rect, back_text, lc.selected),
+            );
         }
     }
 }

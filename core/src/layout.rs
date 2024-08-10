@@ -41,6 +41,7 @@ pub struct Cursor {
     pub handle: AnyHandle,
     pub widget_state: WidgetState,
     pub rect: LogicalRect<f32>,
+    pub c: Option<char>,
 }
 
 #[derive(Clone, Debug)]
@@ -122,11 +123,17 @@ impl LayoutElement {
     }
 
     #[inline]
-    pub fn cursor(widget: &impl Widget, widget_state: WidgetState, rect: LogicalRect<f32>) -> Self {
+    pub fn cursor(
+        widget: &impl Widget,
+        widget_state: WidgetState,
+        rect: LogicalRect<f32>,
+        c: Option<char>,
+    ) -> Self {
         Self::Cursor(Cursor {
             handle: AnyHandle::new(widget),
             widget_state,
             rect,
+            c,
         })
     }
 

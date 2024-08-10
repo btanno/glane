@@ -187,7 +187,7 @@ impl WidgetState {
 pub trait HasChildren {
     fn len(&self) -> usize;
     fn push(&mut self, child: impl Widget);
-    fn erase(&mut self, child: impl HasId);
+    fn erase(&mut self, child: &impl HasId);
 
     fn is_empty(&self) -> bool {
         self.len() == 0

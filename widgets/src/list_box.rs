@@ -8,7 +8,7 @@ pub struct Style {
 impl Default for Style {
     fn default() -> Self {
         Self {
-            padding: LogicalRect::new(5.0, 2.0, 2.0, 2.0),
+            padding: LogicalRect::new(5.0, 2.0, 5.0, 2.0),
         }
     }
 }
@@ -90,8 +90,7 @@ impl ListBox {
     #[inline]
     pub fn erase_selected(&mut self) {
         if let Some(index) = self.selected {
-            self.children.remove(index);
-            self.selected = None;
+            self.erase(&self.children[index].object.id())
         }
     }
 }
@@ -263,15 +262,18 @@ impl WidgetMessage for ListBox {
 }
 
 impl HasChildren for ListBox {
+    #[inline]
     fn len(&self) -> usize {
         self.children.len()
     }
 
+    #[inline]
     fn push(&mut self, child: impl Widget) {
         self.children.push(Child::new(child));
     }
 
-    fn erase(&mut self, child: impl HasId) {
+    #[inline]
+    fn erase(&mut self, child: &impl HasId) {
         let Some(index) = self
             .children
             .iter()
@@ -279,9 +281,17 @@ impl HasChildren for ListBox {
         else {
             return;
         };
-        if self.selected.map_or(false, |selected| selected == index) {
-            self.selected = None;
-        }
         self.children.remove(index);
+        if let Some(selected) = self.selected {
+            if self.children.is_empty() {
+                self.selected = None;
+            } else if selected == index {
+                if index == 0 {
+                    self.selected = Some(0);
+                } else {
+                    self.selected = Some(selected - 1);
+                }
+            }
+        }
     }
 }

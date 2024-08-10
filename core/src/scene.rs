@@ -162,6 +162,6 @@ impl Scene {
         T: Widget + HasChildren,
         U: Widget
     {
-        self.apply(parent, move |r| r.erase(child));
+        self.apply(parent, move |r| r.erase(&child));
     }
 }

@@ -13,3 +13,10 @@ impl Id {
 pub trait HasId {
     fn id(&self) -> Id;
 }
+
+impl HasId for Id {
+    #[inline]
+    fn id(&self) -> Id {
+        *self
+    }
+}

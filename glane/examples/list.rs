@@ -224,7 +224,7 @@ impl Canvas {
             glane::LayoutElement::Cursor(_) => {
                 let rect = l.rect();
                 cmd.fill(
-                    &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                    &pnte::Rect::new(rect.left, rect.top, rect.left + 2.0, rect.bottom),
                     &self.text_color,
                 );
             }
@@ -364,6 +364,7 @@ fn main() -> anyhow::Result<()> {
                 let layout = scene.layout();
                 canvas.draw(&layout)?;
                 redrawing.set(false);
+                continue;
             }
             wiard::Event::Resized(ev) => {
                 let Some(dpi) = window.dpi() else {

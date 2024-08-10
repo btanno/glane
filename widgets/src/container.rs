@@ -137,15 +137,18 @@ impl Widget for Column {
 }
 
 impl HasChildren for Column {
+    #[inline]
     fn len(&self) -> usize {
         self.children.len()
     }
 
+    #[inline]
     fn push(&mut self, child: impl Widget) {
         self.children.push(Box::new(child));
     }
 
-    fn erase(&mut self, object: impl HasId) {
+    #[inline]
+    fn erase(&mut self, object: &impl HasId) {
         let Some(index) = self
             .children
             .iter()
@@ -235,15 +238,18 @@ impl Widget for Row {
 }
 
 impl HasChildren for Row {
+    #[inline]
     fn len(&self) -> usize {
         self.children.len()
     }
 
+    #[inline]
     fn push(&mut self, child: impl Widget) {
         self.children.push(Box::new(child));
     }
 
-    fn erase(&mut self, object: impl HasId) {
+    #[inline]
+    fn erase(&mut self, object: &impl HasId) {
         let Some(index) = self
             .children
             .iter()

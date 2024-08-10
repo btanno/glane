@@ -246,7 +246,7 @@ impl Canvas {
             glane::LayoutElement::Cursor(_) => {
                 let rect = l.rect();
                 cmd.fill(
-                    &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                    &pnte::Rect::new(rect.left, rect.top, rect.left + 2.0, rect.bottom),
                     &self.white,
                 );
             }
@@ -402,6 +402,7 @@ fn main() -> anyhow::Result<()> {
                 let layout = scene.layout();
                 canvas.draw(&layout)?;
                 redrawing.set(false);
+                continue;
             }
             wiard::Event::Resized(ev) => {
                 let Some(dpi) = window.dpi() else {
@@ -445,6 +446,18 @@ fn main() -> anyhow::Result<()> {
                 match msg {
                     glane::widgets::list_box::Message::Selected(i) => {
                         println!("list_box selected: {i}");
+                    }
+                }
+            } else if let Some(msg) = event.message(&dropdown_box) {
+                match msg {
+                    glane::widgets::dropdown_box::Message::Selected(i) => {
+                        println!("dropdown_box selected: {i}");
+                    }
+                    glane::widgets::dropdown_box::Message::OpenedList => {
+                        println!("dropdown_box opened list");
+                    }
+                    glane::widgets::dropdown_box::Message::ClosedList => {
+                        println!("dropdown_box closed list");
                     }
                 }
             }
