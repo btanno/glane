@@ -4,7 +4,6 @@ use unicode_normalization::UnicodeNormalization;
 #[derive(Debug)]
 pub struct Style {
     pub font: Option<Font>,
-    pub width: Option<std::num::NonZeroU32>,
     pub padding: LogicalRect<f32>,
 }
 
@@ -12,7 +11,6 @@ impl Default for Style {
     fn default() -> Self {
         Self {
             font: None,
-            width: None,
             padding: LogicalRect::new(5.0, 3.0, 5.0, 3.0),
         }
     }
@@ -154,27 +152,17 @@ impl Widget for TextBox {
             .chain(self.composition.iter().flat_map(|comp| comp.chars.iter()))
             .chain(self.back_text.iter())
             .collect::<String>();
-        let rect = bounding_box_with_str(font, &text);
-        let width = if let Some(ref width) = self.style.width {
-            width.get()
-        } else {
-            5
-        };
-        let size = {
-            let size = font.global_bounding_size();
-            let size = LogicalSize::new(size.width * width as f32, size.height);
-            LogicalSize::new(
-                if rect.right <= size.width {
-                    size.width
-                } else {
-                    rect.right
-                },
-                rect.bottom,
-            )
-        };
+        let t = bounding_box_with_str(&font, &text);
+        let rect_size = ctx.rect.size();
+        let width = rect_size.width + self.style.padding.left + self.style.padding.right;
+        let height = t.size().height + self.style.padding.top + self.style.padding.bottom;
         LogicalSize::new(
-            size.width + self.style.padding.left + self.style.padding.right,
-            size.height + self.style.padding.top + self.style.padding.bottom,
+            if width > rect_size.width {
+                rect_size.width
+            } else {
+                width
+            },
+            height,
         )
     }
 
@@ -188,7 +176,14 @@ impl Widget for TextBox {
         let mut rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
         result.push(
             &lc,
-            LayoutElement::area(self, self.widget_state, rect, lc.selected),
+            LayoutElement::clipped_area(
+                self,
+                self.widget_state,
+                rect,
+                lc.ctx,
+                LayoutConstructor::new(),
+                lc.selected,
+            ),
         );
         rect.left += self.style.padding.left;
         rect.top += self.style.padding.top;
@@ -196,13 +191,7 @@ impl Widget for TextBox {
         rect.bottom -= self.style.padding.bottom;
         let front_text = self.front_text.iter().collect::<String>();
         let front_rect = bounding_box_with_str(font, &front_text);
-        rect = LogicalRect::from_position_size(
-            LogicalPosition::new(rect.left, rect.top),
-            LogicalSize::new(
-                front_rect.right - front_rect.left,
-                front_rect.bottom - front_rect.top,
-            ),
-        );
+        rect = LogicalRect::from_position_size(rect.left_top(), front_rect.size());
         if !self.front_text.is_empty() {
             result.push(
                 &lc,

@@ -155,15 +155,7 @@ impl Canvas {
                         &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
                         brush,
                     );
-                } else if l.handle().type_id() == self.text_box_type {
-                    let rect = l.rect();
-                    cmd.stroke(
-                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                        &self.text_box_border,
-                        2.0,
-                        None,
-                    );
-                } else if l.handle().type_id() == self.scroll_bar_type {
+                }  else if l.handle().type_id() == self.scroll_bar_type {
                     let rect = l.rect();
                     cmd.fill(
                         &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
@@ -198,6 +190,14 @@ impl Canvas {
                         self.draw_element(cmd, &child);
                     }
                     cmd.pop_clip();
+                    cmd.stroke(
+                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                        &self.text_box_border,
+                        2.0,
+                        None,
+                    );
+                } else if l.handle().type_id() == self.text_box_type {
+                    let rect = l.rect();
                     cmd.stroke(
                         &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
                         &self.text_box_border,
