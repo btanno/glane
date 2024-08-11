@@ -81,20 +81,23 @@ impl Scene {
     pub fn new<T: Widget>(root: T) -> (Self, Handle<T>) {
         let root = Box::new(root);
         let handle = Handle::new(root.as_ref());
-        (Self {
-            ctx: Context {
-                viewport: LogicalSize::new(1024.0, 768.0),
-                focus: None,
-                layout: Arc::new(Layout::empty()),
-                default_font: FontFace::from_os_default()
-                    .ok()
-                    .map(|face| Font::new(&face, 14.0)),
+        (
+            Self {
+                ctx: Context {
+                    viewport: LogicalSize::new(1024.0, 768.0),
+                    focus: None,
+                    layout: Arc::new(Layout::empty()),
+                    default_font: FontFace::from_os_default()
+                        .ok()
+                        .map(|face| Font::new(&face, 14.0)),
+                    prev_input: None,
+                },
+                root,
                 prev_input: None,
+                apply_funcs: ApplyFuncs::new(),
             },
-            root,
-            prev_input: None,
-            apply_funcs: ApplyFuncs::new(),
-        }, handle)
+            handle,
+        )
     }
 
     #[inline]
@@ -160,7 +163,7 @@ impl Scene {
     pub fn erase_child<T, U>(&mut self, parent: &Handle<T>, child: Handle<U>)
     where
         T: Widget + HasChildren,
-        U: Widget
+        U: Widget,
     {
         self.apply(parent, move |r| r.erase(&child));
     }

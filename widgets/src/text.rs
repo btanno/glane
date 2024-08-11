@@ -6,9 +6,7 @@ pub struct Style {
 
 impl Default for Style {
     fn default() -> Self {
-        Self {
-            font: None,
-        }
+        Self { font: None }
     }
 }
 
@@ -43,7 +41,7 @@ impl Widget for Text {
     fn apply(&mut self, funcs: &mut ApplyFuncs) {
         funcs.apply(self);
     }
-    
+
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
         let font = self
             .style
@@ -56,12 +54,15 @@ impl Widget for Text {
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
-        result.push(&lc, LayoutElement::text(
-            self,
-            WidgetState::None,
-            LogicalRect::from_position_size(lc.rect.left_top(), size),
-            self.text.clone(),
-            false,
-        ));
+        result.push(
+            &lc,
+            LayoutElement::text(
+                self,
+                WidgetState::None,
+                LogicalRect::from_position_size(lc.rect.left_top(), size),
+                self.text.clone(),
+                false,
+            ),
+        );
     }
 }

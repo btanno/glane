@@ -193,4 +193,3 @@ pub trait HasChildren {
         self.len() == 0
     }
 }
-

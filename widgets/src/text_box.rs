@@ -216,11 +216,9 @@ impl Widget for TextBox {
         }
         if lc.ctx.has_focus(self) {
             let cursor_char = self.back_text.last().cloned();
-            let cursor_char_size = cursor_char.map(|c| {
-                bounding_box_with_str(&font, &c.to_string()).size()
-            }).unwrap_or_else(|| {
-                bounding_box_with_str(&font, &'m'.to_string()).size()
-            });
+            let cursor_char_size = cursor_char
+                .map(|c| bounding_box_with_str(&font, &c.to_string()).size())
+                .unwrap_or_else(|| bounding_box_with_str(&font, &'m'.to_string()).size());
             if let Some(ref composition) = self.composition {
                 for clause in composition.clauses.iter() {
                     let text = composition.chars[clause.range.start..clause.range.end]

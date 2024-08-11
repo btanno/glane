@@ -212,7 +212,9 @@ impl Widget for ListBox {
                 if first_view_element.is_none() {
                     first_view_element = Some(i);
                 }
-                child.object.layout(lc.next(rect, lc.layer, selected), &mut layout);
+                child
+                    .object
+                    .layout(lc.next(rect, lc.layer, selected), &mut layout);
                 let d = if padding_rect.top > rect.top {
                     padding_rect.top - rect.top
                 } else if padding_rect.bottom < rect.bottom {

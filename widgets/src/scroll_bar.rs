@@ -189,7 +189,10 @@ impl Widget for ScrollBar {
                 );
                 let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
                 let thumb_rect = LogicalRect::from_position_size(thumb_pt, thumb_size);
-                result.push(&lc, LayoutElement::area(self, WidgetState::None, rect, false));
+                result.push(
+                    &lc,
+                    LayoutElement::area(self, WidgetState::None, rect, false),
+                );
                 result.push(
                     &lc,
                     LayoutElement::area(&self.thumb, self.thumb.widget_state, thumb_rect, false),
@@ -206,7 +209,10 @@ impl Widget for ScrollBar {
                 );
                 let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
                 let thumb_rect = LogicalRect::from_position_size(thumb_pt, thumb_size);
-                result.push(&lc, LayoutElement::area(self, WidgetState::None, rect, false));
+                result.push(
+                    &lc,
+                    LayoutElement::area(self, WidgetState::None, rect, false),
+                );
                 result.push(
                     &lc,
                     LayoutElement::area(&self.thumb, self.thumb.widget_state, thumb_rect, false),

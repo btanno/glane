@@ -30,5 +30,5 @@ impl Widget for Empty {
         ctx.rect.size()
     }
 
-    fn layout(& self, _lc: LayoutContext, _result: &mut LayoutConstructor) {}
+    fn layout(&self, _lc: LayoutContext, _result: &mut LayoutConstructor) {}
 }
