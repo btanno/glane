@@ -1,5 +1,4 @@
 use super::*;
-use std::cell::{Ref, RefCell, RefMut};
 
 #[derive(Clone, Debug)]
 pub struct Area {
@@ -202,16 +201,17 @@ impl<'a> LayoutContext<'a> {
 
 #[derive(Clone, Debug)]
 pub(crate) struct Element {
-    element: RefCell<LayoutElement>,
+    element: LayoutElement,
     layer: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct LayoutConstructor {
     v: Vec<Element>,
 }
 
 impl LayoutConstructor {
+    #[inline]
     pub fn new() -> Self {
         Self { v: vec![] }
     }
@@ -219,19 +219,19 @@ impl LayoutConstructor {
     #[inline]
     pub fn push(&mut self, ctx: &LayoutContext, element: LayoutElement) {
         self.v.push(Element {
-            element: RefCell::new(element),
+            element,
             layer: ctx.layer,
         });
     }
 
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = Ref<LayoutElement>> {
-        self.v.iter().map(|elem| elem.element.borrow())
+    pub fn iter(&self) -> impl Iterator<Item = &LayoutElement> {
+        self.v.iter().map(|elem| &elem.element)
     }
 
     #[inline]
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = RefMut<LayoutElement>> {
-        self.v.iter().map(|elem| elem.element.borrow_mut())
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut LayoutElement> {
+        self.v.iter_mut().map(|elem| &mut elem.element)
     }
 }
 
@@ -251,8 +251,8 @@ impl Layout {
     }
 
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = Ref<LayoutElement>> {
-        self.v.iter().map(|elem| elem.element.borrow())
+    pub fn iter(&self) -> impl Iterator<Item = &LayoutElement> {
+        self.v.iter().map(|elem| &elem.element)
     }
 
     #[inline]

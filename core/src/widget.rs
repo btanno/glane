@@ -106,7 +106,7 @@ impl AnyHandle {
     where
         T: Widget,
     {
-        (self.t == TypeId::of::<T>()).then(|| Handle {
+        (self.t == TypeId::of::<T>()).then_some(Handle {
             id: self.id,
             _t: std::marker::PhantomData,
         })

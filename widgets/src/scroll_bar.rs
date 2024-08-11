@@ -91,21 +91,26 @@ impl ScrollBar {
 
     #[inline]
     pub fn advance(&mut self, d: isize) {
-        if d > 0 {
-            let max = self.len - self.thumb.len;
-            let d = d as usize;
-            if self.current + d >= max {
-                self.current = max;
-            } else {
-                self.current += d;
+        use std::cmp::Ordering;
+        match d.cmp(&0) {
+            Ordering::Less => {
+                let d = -d as usize;
+                if self.current <= d {
+                    self.current = 0;
+                } else {
+                    self.current -= d;
+                }
             }
-        } else if d < 0 {
-            let d = -d as usize;
-            if self.current <= d {
-                self.current = 0;
-            } else {
-                self.current -= d;
+            Ordering::Greater => {
+                let max = self.len - self.thumb.len;
+                let d = d as usize;
+                if self.current + d >= max {
+                    self.current = max;
+                } else {
+                    self.current += d;
+                }
             }
+            Ordering::Equal => {}
         }
     }
 }
@@ -146,7 +151,7 @@ impl Widget for ScrollBar {
                             let height = size.height - thumb_size.height;
                             let p = m.mouse_state.position.y - layout.rect().top - self.d;
                             let current =
-                                (self.len - self.thumb.len) as f32 * p as f32 / height as f32;
+                                (self.len - self.thumb.len) as f32 * p / height;
                             self.current =
                                 (current.floor() as usize).min(self.len - self.thumb.len - 1);
                             events.push_message(self, Message::Changed(self.current));

@@ -1,6 +1,5 @@
 use super::*;
 use std::any::Any;
-use std::cell::Ref;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -17,7 +16,7 @@ impl Context {
     pub fn find_layout<'a>(
         &'a self,
         widget: &dyn Widget,
-    ) -> impl Iterator<Item = Ref<'a, LayoutElement>> {
+    ) -> impl Iterator<Item = &'a LayoutElement> {
         let id = widget.id();
         self.layout.iter().filter(move |l| l.handle().id() == id)
     }
@@ -29,6 +28,7 @@ impl Context {
     }
 }
 
+#[allow(clippy::type_complexity)]
 struct ApplyElement {
     handle: AnyHandle,
     f: Option<Box<dyn FnOnce(&mut dyn Any)>>,
@@ -37,7 +37,7 @@ struct ApplyElement {
 pub struct ApplyFuncs(Vec<ApplyElement>);
 
 impl ApplyFuncs {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self(vec![])
     }
 

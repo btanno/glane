@@ -32,3 +32,9 @@ impl Widget for Empty {
 
     fn layout(&self, _lc: LayoutContext, _result: &mut LayoutConstructor) {}
 }
+
+impl Default for Empty {
+    fn default() -> Self {
+        Self::new()
+    }
+}

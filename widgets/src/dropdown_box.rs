@@ -63,24 +63,22 @@ impl Widget for DropdownBox {
                                 self.list_visiblity = false;
                             }
                         }
-                    } else {
-                        if m.button == MouseButton::Left {
-                            match m.button_state {
-                                ButtonState::Pressed => {
-                                    self.widget_state = events.push_state_changed(
-                                        self,
-                                        WidgetState::Pressed,
-                                        self.widget_state,
-                                    );
-                                }
-                                ButtonState::Released => {
-                                    self.widget_state = events.push_state_changed(
-                                        self,
-                                        WidgetState::Hover,
-                                        self.widget_state,
-                                    );
-                                    self.list_visiblity = !self.list_visiblity;
-                                }
+                    } else if m.button == MouseButton::Left {
+                        match m.button_state {
+                            ButtonState::Pressed => {
+                                self.widget_state = events.push_state_changed(
+                                    self,
+                                    WidgetState::Pressed,
+                                    self.widget_state,
+                                );
+                            }
+                            ButtonState::Released => {
+                                self.widget_state = events.push_state_changed(
+                                    self,
+                                    WidgetState::Hover,
+                                    self.widget_state,
+                                );
+                                self.list_visiblity = !self.list_visiblity;
                             }
                         }
                     }
@@ -123,7 +121,7 @@ impl Widget for DropdownBox {
 
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
         if let Some(selected) = self.list.selected_child() {
-            let size = selected.size(&ctx);
+            let size = selected.size(ctx);
             (ctx.rect.size().width, size.height).into()
         } else {
             let Some(font) = ctx.ctx.default_font.as_ref() else {
@@ -182,5 +180,11 @@ impl HasChildren for DropdownBox {
     #[inline]
     fn erase(&mut self, child: &impl HasId) {
         self.list.erase(child);
+    }
+}
+
+impl Default for DropdownBox {
+    fn default() -> Self {
+        Self::new()
     }
 }

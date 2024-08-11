@@ -160,6 +160,12 @@ impl HasChildren for Column {
     }
 }
 
+impl Default for Column {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct Row {
     id: Id,
     children: Vec<Box<dyn Widget>>,
@@ -221,7 +227,7 @@ impl Widget for Row {
             let h = (size.height - s.height) / 2.0;
             let r = rect.left + s.width;
             let rb = LogicalPosition::new(
-                (r > lc.rect.right).then_some(lc.rect.right).unwrap_or(r),
+                if r > lc.rect.right { lc.rect.right } else { r },
                 rect.bottom,
             );
             child.layout(
@@ -258,5 +264,11 @@ impl HasChildren for Row {
             return;
         };
         self.children.remove(index);
+    }
+}
+
+impl Default for Row {
+    fn default() -> Self {
+        Self::new()
     }
 }

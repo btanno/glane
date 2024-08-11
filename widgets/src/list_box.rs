@@ -112,29 +112,30 @@ impl Widget for ListBox {
         };
         match input {
             Input::MouseInput(m) => {
-                if m.button == MouseButton::Left && m.button_state == ButtonState::Pressed {
-                    if area.rect().is_crossing(&m.mouse_state.position) {
-                        events.push(self, SetFocus);
-                        let mut i = self.first_view_element.get();
-                        let mut height = 0.0;
-                        while i < self.children.len() && height < area.rect().size().height {
-                            let element = &self.children[i];
-                            let element_rect = element.rect.get().map(|r| {
-                                LogicalRect::new(
-                                    r.left,
-                                    r.top,
-                                    r.right - bar.rect().size().width,
-                                    r.bottom,
-                                )
-                            });
-                            if element_rect.map_or(false, |r| r.contains(&m.mouse_state.position)) {
-                                events.push_message(self, Message::Selected(i));
-                                self.selected = Some(i);
-                                break;
-                            }
-                            i += 1;
-                            height += element.rect.get().map_or(0.0, |r| r.size().height);
+                let cond = m.button == MouseButton::Left
+                    && m.button_state == ButtonState::Pressed
+                    && area.rect().is_crossing(&m.mouse_state.position);
+                if cond {
+                    events.push(self, SetFocus);
+                    let mut i = self.first_view_element.get();
+                    let mut height = 0.0;
+                    while i < self.children.len() && height < area.rect().size().height {
+                        let element = &self.children[i];
+                        let element_rect = element.rect.get().map(|r| {
+                            LogicalRect::new(
+                                r.left,
+                                r.top,
+                                r.right - bar.rect().size().width,
+                                r.bottom,
+                            )
+                        });
+                        if element_rect.map_or(false, |r| r.contains(&m.mouse_state.position)) {
+                            events.push_message(self, Message::Selected(i));
+                            self.selected = Some(i);
+                            break;
                         }
+                        i += 1;
+                        height += element.rect.get().map_or(0.0, |r| r.size().height);
                     }
                 }
             }
@@ -156,11 +157,11 @@ impl Widget for ListBox {
                 }
             }
             Input::MouseWheel(m) => {
-                if area.rect().is_crossing(&m.mouse_state.position) {
-                    if m.axis == MouseWheelAxis::Vertical {
-                        let mut vbar = self.vertical_bar.borrow_mut();
-                        vbar.advance(self.min_height.get() as isize * m.distance as isize);
-                    }
+                if area.rect().is_crossing(&m.mouse_state.position)
+                    && m.axis == MouseWheelAxis::Vertical
+                {
+                    let mut vbar = self.vertical_bar.borrow_mut();
+                    vbar.advance(self.min_height.get() as isize * m.distance as isize);
                 }
             }
             _ => {}
@@ -295,5 +296,11 @@ impl HasChildren for ListBox {
                 }
             }
         }
+    }
+}
+
+impl Default for ListBox {
+    fn default() -> Self {
+        Self::new()
     }
 }

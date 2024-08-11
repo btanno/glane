@@ -1,13 +1,8 @@
 use super::*;
 
+#[derive(Default)]
 pub struct Style {
     font: Option<Font>,
-}
-
-impl Default for Style {
-    fn default() -> Self {
-        Self { font: None }
-    }
 }
 
 pub struct Text {
@@ -48,7 +43,7 @@ impl Widget for Text {
             .font
             .as_ref()
             .unwrap_or_else(|| ctx.ctx.default_font.as_ref().unwrap());
-        let shape = bounding_box_with_str(&font, &self.text);
+        let shape = bounding_box_with_str(font, &self.text);
         LogicalSize::new(shape.right - shape.left, shape.bottom - shape.top)
     }
 

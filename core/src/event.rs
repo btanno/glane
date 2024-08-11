@@ -77,7 +77,7 @@ impl Event {
 }
 
 #[inline]
-pub fn state_changed_exists(v: &Vec<Event>) -> bool {
+pub fn state_changed_exists(v: &[Event]) -> bool {
     v.iter()
         .find_map(|ev| ev.downcast_ref::<StateChanged>())
         .is_some()
@@ -151,5 +151,12 @@ impl Events {
     #[inline]
     pub fn iter_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Event> {
         self.0.iter_mut()
+    }
+}
+
+impl Default for Events {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
     }
 }
