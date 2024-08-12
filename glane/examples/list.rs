@@ -131,7 +131,7 @@ impl Canvas {
                     return;
                 }
                 if l.handle().type_id() == TypeId::of::<Button>() {
-                    let brush = match l.widget_state() {
+                    let brush = match area.widget_state {
                         glane::WidgetState::None => &self.button_bg,
                         glane::WidgetState::Hover => &self.button_bg_hover,
                         glane::WidgetState::Pressed => &self.button_bg_pressed,
@@ -153,6 +153,18 @@ impl Canvas {
                         &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
                         &self.scroll_bar_thumb,
                     );
+                } else if l.handle().type_id() == TypeId::of::<ListBox>() {
+                    let rect = area.rect;
+                    cmd.fill(
+                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                        &self.list_box_bg,
+                    );
+                    cmd.stroke(
+                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                        &self.border_color,
+                        2.0,
+                        None,
+                    );
                 } else {
                     let rect = l.rect();
                     cmd.stroke(
@@ -161,36 +173,6 @@ impl Canvas {
                         2.0,
                         None,
                     );
-                }
-            }
-            glane::LayoutElement::ClippedArea(area) => {
-                let rect = area.rect;
-                let rect = pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
-                if l.handle().type_id() == TypeId::of::<ListBox>() {
-                    cmd.push_clip(rect);
-                    cmd.fill(
-                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                        &self.list_box_bg,
-                    );
-                    for child in area.layout.iter() {
-                        self.draw_element(cmd, &child);
-                    }
-                    cmd.pop_clip();
-                    cmd.stroke(
-                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                        &self.border_color,
-                        2.0,
-                        None,
-                    );
-                } else {
-                    let rect = area.rect;
-                    let rect = pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
-                    cmd.push_clip(rect);
-                    for child in area.layout.iter() {
-                        self.draw_element(cmd, &child);
-                    }
-                    cmd.pop_clip();
-                    cmd.stroke(&rect, &self.border_color, 2.0, None);
                 }
             }
             glane::LayoutElement::Text(t) => {
@@ -227,6 +209,18 @@ impl Canvas {
                     &pnte::Rect::new(rect.left, rect.top, rect.left + 2.0, rect.bottom),
                     &self.text_color,
                 );
+            }
+            glane::LayoutElement::StartClipping(clip) => {
+                let rect = pnte::Rect::new(
+                    clip.rect.left,
+                    clip.rect.top,
+                    clip.rect.right,
+                    clip.rect.bottom,
+                );
+                cmd.push_clip(rect);
+            }
+            glane::LayoutElement::EndClipping(_) => {
+                cmd.pop_clip();
             }
             _ => {}
         }

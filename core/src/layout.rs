@@ -9,15 +9,6 @@ pub struct Area {
 }
 
 #[derive(Clone, Debug)]
-pub struct ClippedArea {
-    pub handle: AnyHandle,
-    pub widget_state: WidgetState,
-    pub rect: LogicalRect<f32>,
-    pub layout: Layout,
-    pub selected: bool,
-}
-
-#[derive(Clone, Debug)]
 pub struct Text {
     pub handle: AnyHandle,
     pub widget_state: WidgetState,
@@ -44,13 +35,20 @@ pub struct Cursor {
 }
 
 #[derive(Clone, Debug)]
+pub struct Clipping {
+    pub handle: AnyHandle,
+    pub rect: LogicalRect<f32>,
+}
+
+#[derive(Clone, Debug)]
 #[non_exhaustive]
 pub enum LayoutElement {
     Area(Area),
-    ClippedArea(ClippedArea),
     Text(Text),
     CompositionText(CompositionText),
     Cursor(Cursor),
+    StartClipping(Clipping),
+    EndClipping(Clipping),
 }
 
 impl LayoutElement {
@@ -65,24 +63,6 @@ impl LayoutElement {
             handle: AnyHandle::new(widget),
             widget_state,
             rect,
-            selected,
-        })
-    }
-
-    #[inline]
-    pub fn clipped_area(
-        widget: &impl Widget,
-        widget_state: WidgetState,
-        rect: LogicalRect<f32>,
-        ctx: &Context,
-        layout: LayoutConstructor,
-        selected: bool,
-    ) -> Self {
-        Self::ClippedArea(ClippedArea {
-            handle: AnyHandle::new(widget),
-            widget_state,
-            rect,
-            layout: Layout::new(ctx, layout),
             selected,
         })
     }
@@ -137,24 +117,30 @@ impl LayoutElement {
     }
 
     #[inline]
-    pub fn handle(&self) -> AnyHandle {
-        match self {
-            Self::Area(a) => a.handle,
-            Self::ClippedArea(a) => a.handle,
-            Self::Text(t) => t.handle,
-            Self::CompositionText(t) => t.handle,
-            Self::Cursor(c) => c.handle,
-        }
+    pub fn start_clipping(widget: &impl Widget, rect: LogicalRect<f32>) -> Self {
+        Self::StartClipping(Clipping {
+            handle: AnyHandle::new(widget),
+            rect,
+        })
     }
 
     #[inline]
-    pub fn widget_state(&self) -> WidgetState {
+    pub fn end_clipping(widget: &impl Widget, rect: LogicalRect<f32>) -> Self {
+        Self::EndClipping(Clipping {
+            handle: AnyHandle::new(widget),
+            rect,
+        })
+    }
+
+    #[inline]
+    pub fn handle(&self) -> AnyHandle {
         match self {
-            Self::Area(a) => a.widget_state,
-            Self::ClippedArea(a) => a.widget_state,
-            Self::Text(t) => t.widget_state,
-            Self::CompositionText(t) => t.widget_state,
-            Self::Cursor(c) => c.widget_state,
+            Self::Area(a) => a.handle,
+            Self::Text(t) => t.handle,
+            Self::CompositionText(t) => t.handle,
+            Self::Cursor(c) => c.handle,
+            Self::StartClipping(c) => c.handle,
+            Self::EndClipping(c) => c.handle,
         }
     }
 
@@ -162,10 +148,11 @@ impl LayoutElement {
     pub fn rect(&self) -> &LogicalRect<f32> {
         match self {
             Self::Area(a) => &a.rect,
-            Self::ClippedArea(a) => &a.rect,
             Self::Text(t) => &t.rect,
             Self::CompositionText(t) => &t.rect,
             Self::Cursor(c) => &c.rect,
+            Self::StartClipping(c) => &c.rect,
+            Self::EndClipping(c) => &c.rect,
         }
     }
 }

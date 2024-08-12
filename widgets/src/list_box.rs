@@ -104,7 +104,7 @@ impl HasId for ListBox {
 impl Widget for ListBox {
     fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow {
         let mut layout = ctx.find_layout(self);
-        let Some(area) = layout.find(|l| matches!(&**l, LayoutElement::ClippedArea(_))) else {
+        let Some(area) = layout.find(|l| matches!(&**l, LayoutElement::StartClipping(_))) else {
             return ControlFlow::Continue;
         };
         let Some(bar) = ctx.find_layout(&*self.vertical_bar.borrow()).next() else {
@@ -181,7 +181,8 @@ impl Widget for ListBox {
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
-        let mut layout = LayoutConstructor::new();
+        result.push(&lc, LayoutElement::start_clipping(self, lc.rect));
+        result.push(&lc, LayoutElement::area(self, self.widget_state, lc.rect, false));
         let current = self.vertical_bar.borrow().current() as f32;
         let padding_rect = LogicalRect::new(
             lc.rect.left + self.style.padding.left,
@@ -205,7 +206,7 @@ impl Widget for ListBox {
             if rect.is_crossing(&viewport) {
                 let selected = self.selected.map_or(false, |selected| selected == i);
                 if selected {
-                    layout.push(
+                    result.push(
                         &lc,
                         LayoutElement::area(self, WidgetState::None, rect, true),
                     );
@@ -215,7 +216,7 @@ impl Widget for ListBox {
                 }
                 child
                     .object
-                    .layout(lc.next(rect, lc.layer, selected), &mut layout);
+                    .layout(lc.next(rect, lc.layer, selected), result);
                 let d = if padding_rect.top > rect.top {
                     padding_rect.top - rect.top
                 } else if padding_rect.bottom < rect.bottom {
@@ -236,10 +237,6 @@ impl Widget for ListBox {
             bar.thumb.len = (thumb_height.ceil()) as usize;
             bar.len = total_size.height.ceil() as usize;
         }
-        result.push(
-            &lc,
-            LayoutElement::clipped_area(self, WidgetState::None, lc.rect, lc.ctx, layout, false),
-        );
         {
             let bar = self.vertical_bar.borrow();
             let size = bar.size(&lc);
@@ -257,6 +254,7 @@ impl Widget for ListBox {
                 result,
             );
         }
+        result.push(&lc, LayoutElement::end_clipping(self, lc.rect));
     }
 }
 

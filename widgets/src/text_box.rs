@@ -174,17 +174,9 @@ impl Widget for TextBox {
             .as_ref()
             .unwrap_or_else(|| lc.ctx.default_font.as_ref().unwrap());
         let mut rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
-        result.push(
-            &lc,
-            LayoutElement::clipped_area(
-                self,
-                self.widget_state,
-                rect,
-                lc.ctx,
-                LayoutConstructor::new(),
-                lc.selected,
-            ),
-        );
+        let clipping_rect = rect;
+        result.push(&lc, LayoutElement::start_clipping(self, clipping_rect));
+        result.push(&lc, LayoutElement::area(self, self.widget_state, clipping_rect, false));
         rect.left += self.style.padding.left;
         rect.top += self.style.padding.top;
         rect.right -= self.style.padding.right;
@@ -289,6 +281,7 @@ impl Widget for TextBox {
                 LayoutElement::text(self, self.widget_state, rect, back_text, lc.selected),
             );
         }
+        result.push(&lc, LayoutElement::end_clipping(self, clipping_rect));
     }
 }
 
