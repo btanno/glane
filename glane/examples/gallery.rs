@@ -146,56 +146,63 @@ impl Canvas {
                     cmd.fill(&rect, &self.selected_bg);
                     return;
                 }
-                if l.handle().type_id() == self.button_type {
-                    let brush = match area.widget_state {
-                        glane::WidgetState::None => &self.button_bg,
-                        glane::WidgetState::Hover => &self.button_bg_hover,
-                        glane::WidgetState::Pressed => &self.button_bg_pressed,
-                    };
-                    let rect = l.rect();
-                    cmd.fill(
-                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                        brush,
-                    );
-                } else if l.handle().type_id() == self.scroll_bar_type {
-                    let rect = l.rect();
-                    cmd.fill(
-                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                        &self.scroll_bar_bg,
-                    );
-                } else if l.handle().type_id() == self.scroll_bar_thumb_type {
-                    let rect = l.rect();
-                    cmd.fill(
-                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                        &self.scroll_bar_thumb,
-                    );
-                } else if l.handle().type_id() == self.list_box_type {
-                    cmd.fill(
-                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                        &self.list_box_bg,
-                    );
-                    cmd.stroke(
-                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                        &self.text_box_border,
-                        2.0,
-                        None,
-                    );
-                } else if l.handle().type_id() == self.text_box_type {
-                    let rect = l.rect();
-                    cmd.stroke(
-                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                        &self.text_box_border,
-                        2.0,
-                        None,
-                    );
-                } else {
-                    let rect = l.rect();
-                    cmd.stroke(
-                        &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
-                        &self.text_box_border,
-                        2.0,
-                        None,
-                    );
+                match l.handle().type_id() {
+                    t if t == self.button_type => {
+                        let brush = match area.widget_state {
+                            glane::WidgetState::None => &self.button_bg,
+                            glane::WidgetState::Hover => &self.button_bg_hover,
+                            glane::WidgetState::Pressed => &self.button_bg_pressed,
+                        };
+                        let rect = l.rect();
+                        cmd.fill(
+                            &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                            brush,
+                        );
+                    }
+                    t if t == self.scroll_bar_type => {
+                        let rect = l.rect();
+                        cmd.fill(
+                            &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                            &self.scroll_bar_bg,
+                        );
+                    }
+                    t if t == self.scroll_bar_thumb_type => {
+                        let rect = l.rect();
+                        cmd.fill(
+                            &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                            &self.scroll_bar_thumb,
+                        );
+                    }
+                    t if t == self.list_box_type => {
+                        cmd.fill(
+                            &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                            &self.list_box_bg,
+                        );
+                        cmd.stroke(
+                            &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                            &self.text_box_border,
+                            2.0,
+                            None,
+                        );
+                    }
+                    t if t == self.text_box_type => {
+                        let rect = l.rect();
+                        cmd.stroke(
+                            &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                            &self.text_box_border,
+                            2.0,
+                            None,
+                        );
+                    }
+                    _ => {
+                        let rect = l.rect();
+                        cmd.stroke(
+                            &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
+                            &self.text_box_border,
+                            2.0,
+                            None,
+                        );
+                    }
                 }
             }
             glane::LayoutElement::Text(t) => {
@@ -271,28 +278,33 @@ fn main() -> anyhow::Result<()> {
     let window = wiard::Window::builder(&event_rx)
         .title("glane gallery")
         .build()?;
-    let (mut scene, root) = {
-        let mut root = glane::widgets::Column::new();
-        root.max_height = Some(200.0);
-        glane::Scene::new(root)
+    let ((mut scene, _), left, right) = {
+        let (root, left, right) = glane::widgets::VerticalPanes::new(
+            glane::widgets::Column::new(),
+            glane::widgets::Column::new(),
+            0.3
+        );
+        (glane::Scene::new(root), left, right)
     };
-    let row = scene.push_child(&root, glane::widgets::Row::new());
+    scene.apply(&left, |col| col.max_height = Some(200.0));
+    scene.apply(&right, |col| col.max_height = Some(200.0));
+    let row = scene.push_child(&left, glane::widgets::Row::new());
     scene.push_child(&row, glane::widgets::Label::new("Button"));
     let button = scene.push_child(&row, glane::widgets::Button::new("Push"));
-    let row1 = scene.push_child(&root, glane::widgets::Row::new());
+    let row1 = scene.push_child(&left, glane::widgets::Row::new());
     scene.push_child(&row1, glane::widgets::Label::new("TextBox"));
     let text_box = scene.push_child(&row1, glane::widgets::TextBox::new());
-    let row2 = scene.push_child(&root, glane::widgets::Row::new());
+    let row2 = scene.push_child(&left, glane::widgets::Row::new());
     scene.push_child(&row2, glane::widgets::Label::new("ScrollBar"));
     let scroll_bar = scene.push_child(&row2, glane::widgets::ScrollBar::new(100, 10));
     let scroll_bar2 = scene.push_child(&row2, glane::widgets::ScrollBar::new(1000, 10));
-    let row4 = scene.push_child(&root, glane::widgets::Row::new());
+    let row4 = scene.push_child(&right, glane::widgets::Row::new());
     scene.push_child(&row4, glane::widgets::Label::new("DropdownBox"));
     let dropdown_box = scene.push_child(&row4, glane::widgets::DropdownBox::new());
     for c in 'A'..='C' {
         scene.push_child(&dropdown_box, glane::widgets::Text::new(c.to_string()));
     }
-    let row3 = scene.push_child(&root, glane::widgets::Row::new());
+    let row3 = scene.push_child(&right, glane::widgets::Row::new());
     scene.push_child(&row3, glane::widgets::Label::new("ListBox"));
     let list_box = scene.push_child(&row3, glane::widgets::ListBox::new());
     for c in 'a'..='z' {

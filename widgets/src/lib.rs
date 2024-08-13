@@ -7,6 +7,7 @@ pub mod list_box;
 pub mod scroll_bar;
 pub mod text;
 pub mod text_box;
+pub mod pane;
 
 pub use button::Button;
 pub use container::*;
@@ -17,5 +18,6 @@ pub use list_box::ListBox;
 pub use scroll_bar::ScrollBar;
 pub use text::Text;
 pub use text_box::TextBox;
+pub use pane::{VerticalPanes, HorizontalPanes};
 
 use glane_core::*;
