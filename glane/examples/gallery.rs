@@ -72,6 +72,8 @@ struct Canvas {
     scroll_bar_thumb: pnte::SolidColorBrush,
     selected_bg: pnte::SolidColorBrush,
     list_box_bg: pnte::SolidColorBrush,
+    slider_bg: pnte::SolidColorBrush,
+    slider_knob: pnte::SolidColorBrush,
     button_type: TypeId,
     text_box_type: TypeId,
     scroll_bar_type: TypeId,
@@ -106,6 +108,8 @@ impl Canvas {
         let selected_bg = pnte::SolidColorBrush::new(&ctx, (0.0, 0.3, 0.0, 1.0))?;
         let list_box_bg = pnte::SolidColorBrush::new(&ctx, (0.1, 0.1, 0.1, 0.9))?;
         let button_type = TypeId::of::<glane::widgets::Button>();
+        let slider_bg = pnte::SolidColorBrush::new(&ctx, (0.3, 0.3, 0.3, 1.0))?;
+        let slider_knob = pnte::SolidColorBrush::new(&ctx, (0.8, 0.8, 0.8, 1.0))?;
         let text_box_type = TypeId::of::<glane::widgets::TextBox>();
         let scroll_bar_type = TypeId::of::<glane::widgets::ScrollBar>();
         let scroll_bar_thumb_type = TypeId::of::<glane::widgets::scroll_bar::Thumb>();
@@ -123,6 +127,8 @@ impl Canvas {
             scroll_bar_thumb,
             selected_bg,
             list_box_bg,
+            slider_bg,
+            slider_knob,
             button_type,
             text_box_type,
             scroll_bar_type,
@@ -192,6 +198,28 @@ impl Canvas {
                             &self.text_box_border,
                             2.0,
                             None,
+                        );
+                    }
+                    t if t == TypeId::of::<glane::widgets::Slider>() => {
+                        let rect = l.rect();
+                        let size = rect.size();
+                        cmd.fill(
+                            &pnte::Rect::from_point_size(
+                                (rect.left, rect.top + size.height / 4.0),
+                                (size.width, size.height / 2.0),
+                            ),
+                            &self.slider_bg,
+                        );
+                    }
+                    t if t == TypeId::of::<glane::widgets::slider::Knob>() => {
+                        let rect = l.rect();
+                        let size = rect.size();
+                        cmd.fill(
+                            &pnte::Circle::new(
+                                (rect.left + size.width / 2.0, rect.top + size.height / 2.0),
+                                size.width / 2.0,
+                            ),
+                            &self.slider_knob,
                         );
                     }
                     _ => {
@@ -282,31 +310,34 @@ fn main() -> anyhow::Result<()> {
         let (root, left, right) = glane::widgets::VerticalPanes::new(
             glane::widgets::Column::new(),
             glane::widgets::Column::new(),
-            0.3
+            0.5,
         );
         (glane::Scene::new(root), left, right)
     };
     scene.apply(&left, |col| col.max_height = Some(200.0));
     scene.apply(&right, |col| col.max_height = Some(200.0));
-    let row = scene.push_child(&left, glane::widgets::Row::new());
-    scene.push_child(&row, glane::widgets::Label::new("Button"));
-    let button = scene.push_child(&row, glane::widgets::Button::new("Push"));
-    let row1 = scene.push_child(&left, glane::widgets::Row::new());
-    scene.push_child(&row1, glane::widgets::Label::new("TextBox"));
-    let text_box = scene.push_child(&row1, glane::widgets::TextBox::new());
-    let row2 = scene.push_child(&left, glane::widgets::Row::new());
-    scene.push_child(&row2, glane::widgets::Label::new("ScrollBar"));
-    let scroll_bar = scene.push_child(&row2, glane::widgets::ScrollBar::new(100, 10));
-    let scroll_bar2 = scene.push_child(&row2, glane::widgets::ScrollBar::new(1000, 10));
-    let row4 = scene.push_child(&right, glane::widgets::Row::new());
-    scene.push_child(&row4, glane::widgets::Label::new("DropdownBox"));
-    let dropdown_box = scene.push_child(&row4, glane::widgets::DropdownBox::new());
+    let row_button = scene.push_child(&left, glane::widgets::Row::new());
+    scene.push_child(&row_button, glane::widgets::Label::new("Button"));
+    let button = scene.push_child(&row_button, glane::widgets::Button::new("Push"));
+    let row_text_box = scene.push_child(&left, glane::widgets::Row::new());
+    scene.push_child(&row_text_box, glane::widgets::Label::new("TextBox"));
+    let text_box = scene.push_child(&row_text_box, glane::widgets::TextBox::new());
+    let row_scroll_bar = scene.push_child(&left, glane::widgets::Row::new());
+    scene.push_child(&row_scroll_bar, glane::widgets::Label::new("ScrollBar"));
+    let scroll_bar = scene.push_child(&row_scroll_bar, glane::widgets::ScrollBar::new(100, 10));
+    let scroll_bar2 = scene.push_child(&row_scroll_bar, glane::widgets::ScrollBar::new(1000, 10));
+    let row_slider = scene.push_child(&left, glane::widgets::Row::new());
+    scene.push_child(&row_slider, glane::widgets::Label::new("Slider"));
+    let slider = scene.push_child(&row_slider, glane::widgets::Slider::new());
+    let row_dropdown_box = scene.push_child(&right, glane::widgets::Row::new());
+    scene.push_child(&row_dropdown_box, glane::widgets::Label::new("DropdownBox"));
+    let dropdown_box = scene.push_child(&row_dropdown_box, glane::widgets::DropdownBox::new());
     for c in 'A'..='C' {
         scene.push_child(&dropdown_box, glane::widgets::Text::new(c.to_string()));
     }
-    let row3 = scene.push_child(&right, glane::widgets::Row::new());
-    scene.push_child(&row3, glane::widgets::Label::new("ListBox"));
-    let list_box = scene.push_child(&row3, glane::widgets::ListBox::new());
+    let row_list_box = scene.push_child(&right, glane::widgets::Row::new());
+    scene.push_child(&row_list_box, glane::widgets::Label::new("ListBox"));
+    let list_box = scene.push_child(&row_list_box, glane::widgets::ListBox::new());
     for c in 'a'..='z' {
         scene.push_child(&list_box, glane::widgets::Text::new(c.to_string()));
     }
@@ -465,6 +496,12 @@ fn main() -> anyhow::Result<()> {
                     }
                     glane::widgets::dropdown_box::Message::ClosedList => {
                         println!("dropdown_box closed list");
+                    }
+                }
+            } else if let Some(msg) = event.message(&slider) {
+                match msg {
+                    glane::widgets::slider::Message::Changed(v) => {
+                        println!("slider changed: {v}");
                     }
                 }
             }
