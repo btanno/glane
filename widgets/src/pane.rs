@@ -1,5 +1,6 @@
 use super::*;
 
+#[derive(Debug)]
 pub struct VerticalPanes {
     id: Id,
     panes: [Box<dyn Widget>; 2],
@@ -67,6 +68,7 @@ impl Widget for VerticalPanes {
     }
 }
 
+#[derive(Debug)]
 pub struct HorizontalPanes {
     id: Id,
     panes: [Box<dyn Widget>; 2],

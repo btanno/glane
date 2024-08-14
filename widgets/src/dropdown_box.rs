@@ -1,11 +1,13 @@
 use super::*;
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Message {
     Selected(usize),
     OpenedList,
     ClosedList,
 }
 
+#[derive(Debug)]
 pub struct DropdownBox {
     id: Id,
     widget_state: WidgetState,

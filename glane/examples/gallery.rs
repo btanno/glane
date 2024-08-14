@@ -314,8 +314,6 @@ fn main() -> anyhow::Result<()> {
         );
         (glane::Scene::new(root), left, right)
     };
-    scene.apply(&left, |col| col.max_height = Some(200.0));
-    scene.apply(&right, |col| col.max_height = Some(200.0));
     let row_button = scene.push_child(&left, glane::widgets::Row::new());
     scene.push_child(&row_button, glane::widgets::Label::new("Button"));
     let button = scene.push_child(&row_button, glane::widgets::Button::new("Push"));
@@ -324,11 +322,32 @@ fn main() -> anyhow::Result<()> {
     let text_box = scene.push_child(&row_text_box, glane::widgets::TextBox::new());
     let row_scroll_bar = scene.push_child(&left, glane::widgets::Row::new());
     scene.push_child(&row_scroll_bar, glane::widgets::Label::new("ScrollBar"));
-    let scroll_bar = scene.push_child(&row_scroll_bar, glane::widgets::ScrollBar::new(100, 10));
-    let scroll_bar2 = scene.push_child(&row_scroll_bar, glane::widgets::ScrollBar::new(1000, 10));
+    let scroll_bar = {
+        let scroll_bar = glane::widgets::ScrollBar::new(100, 10);
+        let handle = glane::Handle::new(&scroll_bar);
+        scene.push_child(
+            &row_scroll_bar,
+            glane::widgets::MaxSize::new(None, Some(200.0), scroll_bar),
+        );
+        handle
+    };
+    let scroll_bar2 = {
+        let scroll_bar = glane::widgets::ScrollBar::new(1000, 10);
+        let handle = glane::Handle::new(&scroll_bar);
+        scene.push_child(
+            &row_scroll_bar,
+            glane::widgets::MaxSize::new(None, Some(200.0), scroll_bar),
+        );
+        handle
+    };
     let row_slider = scene.push_child(&left, glane::widgets::Row::new());
     scene.push_child(&row_slider, glane::widgets::Label::new("Slider"));
-    let slider = scene.push_child(&row_slider, glane::widgets::Slider::new());
+    let slider = {
+        let slider = glane::widgets::Slider::new();
+        let handle = glane::Handle::new(&slider);
+        scene.push_child(&row_slider, glane::widgets::MaxSize::new(Some(150.0), None, slider));
+        handle
+    };
     let row_dropdown_box = scene.push_child(&right, glane::widgets::Row::new());
     scene.push_child(&row_dropdown_box, glane::widgets::Label::new("DropdownBox"));
     let dropdown_box = scene.push_child(&row_dropdown_box, glane::widgets::DropdownBox::new());
@@ -337,7 +356,12 @@ fn main() -> anyhow::Result<()> {
     }
     let row_list_box = scene.push_child(&right, glane::widgets::Row::new());
     scene.push_child(&row_list_box, glane::widgets::Label::new("ListBox"));
-    let list_box = scene.push_child(&row_list_box, glane::widgets::ListBox::new());
+    let list_box = {
+        let list_box = glane::widgets::ListBox::new();
+        let handle = glane::Handle::new(&list_box);
+        scene.push_child(&row_list_box, glane::widgets::MaxSize::new(None, Some(200.0), list_box));
+        handle
+    };
     for c in 'a'..='z' {
         scene.push_child(&list_box, glane::widgets::Text::new(c.to_string()));
     }

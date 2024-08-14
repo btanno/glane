@@ -193,3 +193,9 @@ pub trait HasChildren {
         self.len() == 0
     }
 }
+
+impl std::fmt::Debug for Box<dyn Widget> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Widget({:?})", self.id())
+    }
+}

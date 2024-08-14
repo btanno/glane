@@ -16,12 +16,13 @@ impl Default for Style {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Message {
     Changed(String),
     PositionNotify(LogicalPosition<f32>),
 }
 
+#[derive(Debug)]
 pub struct TextBox {
     id: Id,
     widget_state: WidgetState,

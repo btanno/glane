@@ -11,11 +11,12 @@ pub enum Message {
     Clicked,
 }
 
+#[derive(Debug)]
 pub struct Button {
     id: Id,
+    widget_state: WidgetState,
     pub text: String,
     pub style: Style,
-    state: WidgetState,
 }
 
 impl Button {
@@ -23,12 +24,12 @@ impl Button {
     pub fn new(text: impl Into<String>) -> Self {
         Self {
             id: Id::new(),
+            widget_state: WidgetState::None,
             text: text.into(),
             style: Style {
                 font: None,
                 padding: LogicalRect::new(7.0, 3.0, 7.0, 3.0),
             },
-            state: WidgetState::None,
         }
     }
 }
@@ -53,14 +54,14 @@ impl Widget for Button {
                 if clicked {
                     events.push_message(self, Message::Clicked);
                 }
-                if state != self.state {
-                    self.state = events.push_state_changed(self, state, self.state);
+                if state != self.widget_state {
+                    self.widget_state = events.push_state_changed(self, state, self.widget_state);
                 }
             }
             Input::CursorMoved(m) => {
                 let state = WidgetState::current(layout.rect(), &m.mouse_state);
-                if state != self.state {
-                    self.state = events.push_state_changed(self, state, self.state);
+                if state != self.widget_state {
+                    self.widget_state = events.push_state_changed(self, state, self.widget_state);
                 }
             }
             _ => {}
@@ -88,7 +89,7 @@ impl Widget for Button {
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
         let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
-        result.push(&lc, LayoutElement::area(self, self.state, rect, false));
+        result.push(&lc, LayoutElement::area(self, self.widget_state, rect, false));
         let rect = LogicalRect::new(
             rect.left + self.style.padding.left,
             rect.top + self.style.padding.top,
@@ -97,7 +98,7 @@ impl Widget for Button {
         );
         result.push(
             &lc,
-            LayoutElement::text(self, self.state, rect, self.text.clone(), false),
+            LayoutElement::text(self, self.widget_state, rect, self.text.clone(), false),
         );
     }
 }

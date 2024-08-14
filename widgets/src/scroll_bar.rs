@@ -23,11 +23,12 @@ impl Default for Style {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Message {
     Changed(usize),
 }
 
+#[derive(Debug)]
 pub struct Thumb {
     id: Id,
     pub len: usize,
@@ -62,6 +63,7 @@ impl Widget for Thumb {
     fn layout(&self, _lc: LayoutContext, _result: &mut LayoutConstructor) {}
 }
 
+#[derive(Debug)]
 pub struct ScrollBar {
     id: Id,
     style: Style,

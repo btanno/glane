@@ -1,10 +1,11 @@
 use super::*;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Style {
     font: Option<Font>,
 }
 
+#[derive(Debug)]
 pub struct Text {
     id: Id,
     style: Style,

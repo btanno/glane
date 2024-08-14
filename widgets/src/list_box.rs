@@ -1,6 +1,7 @@
 use super::*;
 use std::cell::{Cell, RefCell};
 
+#[derive(Debug)]
 pub struct Style {
     pub padding: LogicalRect<f32>,
 }
@@ -13,10 +14,12 @@ impl Default for Style {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Message {
     Selected(usize),
 }
 
+#[derive(Debug)]
 struct Child {
     object: Box<dyn Widget>,
     rect: Cell<Option<LogicalRect<f32>>>,
@@ -31,6 +34,7 @@ impl Child {
     }
 }
 
+#[derive(Debug)]
 pub struct ListBox {
     id: Id,
     style: Style,

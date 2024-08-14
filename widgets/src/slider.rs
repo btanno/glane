@@ -1,9 +1,11 @@
 use super::*;
 
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Message {
     Changed(f32),
 }
 
+#[derive(Debug)]
 pub struct Knob {
     id: Id,
 }
@@ -34,6 +36,7 @@ impl Widget for Knob {
     fn layout(&self, _lc: LayoutContext, _result: &mut LayoutConstructor) {}
 }
 
+#[derive(Debug)]
 pub struct Slider {
     id: Id,
     widget_state: WidgetState,
