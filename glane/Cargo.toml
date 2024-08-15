@@ -12,6 +12,10 @@ glane-widgets = { path = "../widgets" }
 
 [dev-dependencies]
 anyhow = "1.0"
+divan = "0.1"
 pnte = "0.2"
 wiard = "0.1"
 
+[[bench]]
+name = "one_frame"
+harness = false
