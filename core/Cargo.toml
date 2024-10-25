@@ -12,4 +12,3 @@ num = "0.4"
 rustybuzz = "0.12"
 sys-locale = "0.3"
 ttf-parser = "0.20"
-

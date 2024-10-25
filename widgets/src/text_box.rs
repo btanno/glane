@@ -153,7 +153,7 @@ impl Widget for TextBox {
             .chain(self.composition.iter().flat_map(|comp| comp.chars.iter()))
             .chain(self.back_text.iter())
             .collect::<String>();
-        let t = bounding_box_with_str(lc.ctx, &font, &text);
+        let t = bounding_box_with_str(lc.ctx, font, &text);
         let rect_size = lc.rect.size();
         let width = rect_size.width + self.style.padding.left + self.style.padding.right;
         let height = t.size().height + self.style.padding.top + self.style.padding.bottom;
@@ -177,7 +177,10 @@ impl Widget for TextBox {
         let mut rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
         let clipping_rect = rect;
         result.push(&lc, LayoutElement::start_clipping(self, clipping_rect));
-        result.push(&lc, LayoutElement::area(self, self.widget_state, clipping_rect, false));
+        result.push(
+            &lc,
+            LayoutElement::area(self, self.widget_state, clipping_rect, false),
+        );
         rect.left += self.style.padding.left;
         rect.top += self.style.padding.top;
         rect.right -= self.style.padding.right;

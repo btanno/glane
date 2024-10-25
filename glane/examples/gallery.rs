@@ -345,7 +345,10 @@ fn main() -> anyhow::Result<()> {
     let slider = {
         let slider = glane::widgets::Slider::new();
         let handle = glane::Handle::new(&slider);
-        scene.push_child(&row_slider, glane::widgets::MaxSize::new(Some(150.0), None, slider));
+        scene.push_child(
+            &row_slider,
+            glane::widgets::MaxSize::new(Some(150.0), None, slider),
+        );
         handle
     };
     let row_dropdown_box = scene.push_child(&right, glane::widgets::Row::new());
@@ -359,7 +362,10 @@ fn main() -> anyhow::Result<()> {
     let list_box = {
         let list_box = glane::widgets::ListBox::new();
         let handle = glane::Handle::new(&list_box);
-        scene.push_child(&row_list_box, glane::widgets::MaxSize::new(None, Some(200.0), list_box));
+        scene.push_child(
+            &row_list_box,
+            glane::widgets::MaxSize::new(None, Some(200.0), list_box),
+        );
         handle
     };
     for c in 'a'..='z' {

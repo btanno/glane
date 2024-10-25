@@ -186,7 +186,10 @@ impl Widget for ListBox {
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         result.push(&lc, LayoutElement::start_clipping(self, lc.rect));
-        result.push(&lc, LayoutElement::area(self, self.widget_state, lc.rect, false));
+        result.push(
+            &lc,
+            LayoutElement::area(self, self.widget_state, lc.rect, false),
+        );
         let current = self.vertical_bar.borrow().current() as f32;
         let padding_rect = LogicalRect::new(
             lc.rect.left + self.style.padding.left,

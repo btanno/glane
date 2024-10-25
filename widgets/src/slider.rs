@@ -61,8 +61,14 @@ impl Slider {
 
     #[inline]
     pub fn set_current(&mut self, value: f32) {
-        assert!(value >= 0.0 && value <= 1.0);
+        assert!((0.0..=1.0).contains(&value));
         self.current = value;
+    }
+}
+
+impl Default for Slider {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

@@ -190,14 +190,14 @@ mod bounding_box {
                     elements.last_mut().unwrap()
                 };
             if let Some((_, rect)) = element.rects.iter().find(|(str, _rc)| str == s) {
-                return rect.clone();
+                return *rect;
             }
             if element.rects.len() >= self.max_size {
                 element.rects.pop_back();
             }
             let rect = Self::create(font, s);
             let s = s.to_string();
-            element.rects.push_front((s, rect.clone()));
+            element.rects.push_front((s, rect));
             rect
         }
 

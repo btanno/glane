@@ -14,7 +14,7 @@ impl VerticalPanes {
         T: Widget,
         U: Widget,
     {
-        assert!(ratio >= 0.0 && ratio <= 1.0);
+        assert!((0.0..=1.0).contains(&ratio));
         let left_handle = Handle::new(&left);
         let right_handle = Handle::new(&right);
         (
@@ -78,7 +78,7 @@ pub struct HorizontalPanes {
 impl HorizontalPanes {
     #[inline]
     pub fn new(top: impl Widget, bottom: impl Widget, ratio: f32) -> Self {
-        assert!(ratio >= 0.0 && ratio <= 1.0);
+        assert!((0.0..=1.0).contains(&ratio));
         Self {
             id: Id::new(),
             panes: [Box::new(top), Box::new(bottom)],

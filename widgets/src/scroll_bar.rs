@@ -152,8 +152,7 @@ impl Widget for ScrollBar {
                         Direction::Vertical => {
                             let height = size.height - thumb_size.height;
                             let p = m.mouse_state.position.y - layout.rect().top - self.d;
-                            let current =
-                                (self.len - self.thumb.len) as f32 * p / height;
+                            let current = (self.len - self.thumb.len) as f32 * p / height;
                             self.current =
                                 (current.floor() as usize).min(self.len - self.thumb.len - 1);
                             events.push_message(self, Message::Changed(self.current));
