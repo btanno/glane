@@ -115,7 +115,15 @@ impl FontFace {
     }
 }
 
-#[derive(Clone, Debug)]
+impl PartialEq for FontFace {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.file, &other.file) && self.index == other.index
+    }
+}
+
+impl Eq for FontFace {}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct Font {
     pub face: FontFace,
     pub size: f32,
@@ -144,23 +152,81 @@ impl Font {
     }
 }
 
-pub fn bounding_box_with_str(font: &Font, s: &str) -> LogicalRect<f32> {
-    let face = rustybuzz::Face::from_slice(&font.face.file.data, font.face.index as u32).unwrap();
-    let size = font.size * 96.0 / 72.0;
-    let scale = size / face.units_per_em() as f32;
-    let bounding = face.global_bounding_box();
-    let bottom = (bounding.y_max - bounding.y_min) as f32 * scale;
-    if s.is_empty() {
-        return LogicalRect::new(0.0, 0.0, 0.0, bottom);
+mod bounding_box {
+    use super::*;
+    use std::collections::VecDeque;
+    use std::sync::Mutex;
+
+    #[derive(Debug)]
+    struct Element {
+        font: Font,
+        rects: VecDeque<(String, LogicalRect<f32>)>,
     }
-    let mut buffer = rustybuzz::UnicodeBuffer::new();
-    buffer.push_str(s);
-    let glyph_buffer = rustybuzz::shape(&face, &[], buffer);
-    let positions = glyph_buffer.glyph_positions();
-    LogicalRect::new(
-        positions[0].x_offset as f32 * scale,
-        0.0,
-        positions.iter().map(|p| p.x_advance as f32).sum::<f32>() * scale,
-        bottom,
-    )
+
+    #[derive(Debug)]
+    pub struct Cache {
+        elements: Mutex<Vec<Element>>,
+        max_size: usize,
+    }
+
+    impl Cache {
+        pub fn new(max_size: usize) -> Arc<Self> {
+            Arc::new(Self {
+                elements: Mutex::new(vec![]),
+                max_size,
+            })
+        }
+
+        pub fn get(&self, font: &Font, s: &str) -> LogicalRect<f32> {
+            let mut elements = self.elements.lock().unwrap();
+            let element =
+                if let Some(element) = elements.iter_mut().find(|element| &element.font == font) {
+                    element
+                } else {
+                    elements.push(Element {
+                        font: font.clone(),
+                        rects: VecDeque::new(),
+                    });
+                    elements.last_mut().unwrap()
+                };
+            if let Some((_, rect)) = element.rects.iter().find(|(str, _rc)| str == s) {
+                return rect.clone();
+            }
+            if element.rects.len() >= self.max_size {
+                element.rects.pop_back();
+            }
+            let rect = Self::create(font, s);
+            let s = s.to_string();
+            element.rects.push_front((s, rect.clone()));
+            rect
+        }
+
+        fn create(font: &Font, s: &str) -> LogicalRect<f32> {
+            let face =
+                rustybuzz::Face::from_slice(&font.face.file.data, font.face.index as u32).unwrap();
+            let size = font.size * 96.0 / 72.0;
+            let scale = size / face.units_per_em() as f32;
+            let bounding = face.global_bounding_box();
+            let bottom = (bounding.y_max - bounding.y_min) as f32 * scale;
+            if s.is_empty() {
+                return LogicalRect::new(0.0, 0.0, 0.0, bottom);
+            }
+            let mut buffer = rustybuzz::UnicodeBuffer::new();
+            buffer.push_str(s);
+            let glyph_buffer = rustybuzz::shape(&face, &[], buffer);
+            let positions = glyph_buffer.glyph_positions();
+            LogicalRect::new(
+                positions[0].x_offset as f32 * scale,
+                0.0,
+                positions.iter().map(|p| p.x_advance as f32).sum::<f32>() * scale,
+                bottom,
+            )
+        }
+    }
+}
+
+pub use bounding_box::Cache as BoundingBoxCache;
+
+pub fn bounding_box_with_str(ctx: &Context, font: &Font, s: &str) -> LogicalRect<f32> {
+    ctx.bounding_box_cache.get(font, s)
 }

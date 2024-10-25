@@ -44,7 +44,7 @@ impl Widget for Label {
             .font
             .as_ref()
             .unwrap_or_else(|| ctx.ctx.default_font.as_ref().unwrap());
-        let shape = bounding_box_with_str(font, &self.text);
+        let shape = bounding_box_with_str(ctx.ctx, font, &self.text);
         LogicalSize::new(shape.right - shape.left, shape.bottom - shape.top)
     }
 

@@ -9,6 +9,7 @@ pub struct Context {
     pub default_font: Option<Font>,
     pub prev_input: Option<Input>,
     focus: Option<AnyHandle>,
+    pub(crate) bounding_box_cache: Arc<BoundingBoxCache>,
 }
 
 impl Context {
@@ -91,6 +92,7 @@ impl Scene {
                         .ok()
                         .map(|face| Font::new(&face, 14.0)),
                     prev_input: None,
+                    bounding_box_cache: BoundingBoxCache::new(300),
                 },
                 root,
                 prev_input: None,

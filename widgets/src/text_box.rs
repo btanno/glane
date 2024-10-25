@@ -141,20 +141,20 @@ impl Widget for TextBox {
         funcs.apply(self);
     }
 
-    fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
+    fn size(&self, lc: &LayoutContext) -> LogicalSize<f32> {
         let font = self
             .style
             .font
             .as_ref()
-            .unwrap_or_else(|| ctx.ctx.default_font.as_ref().unwrap());
+            .unwrap_or_else(|| lc.ctx.default_font.as_ref().unwrap());
         let text = self
             .front_text
             .iter()
             .chain(self.composition.iter().flat_map(|comp| comp.chars.iter()))
             .chain(self.back_text.iter())
             .collect::<String>();
-        let t = bounding_box_with_str(&font, &text);
-        let rect_size = ctx.rect.size();
+        let t = bounding_box_with_str(lc.ctx, &font, &text);
+        let rect_size = lc.rect.size();
         let width = rect_size.width + self.style.padding.left + self.style.padding.right;
         let height = t.size().height + self.style.padding.top + self.style.padding.bottom;
         LogicalSize::new(
@@ -183,7 +183,7 @@ impl Widget for TextBox {
         rect.right -= self.style.padding.right;
         rect.bottom -= self.style.padding.bottom;
         let front_text = self.front_text.iter().collect::<String>();
-        let front_rect = bounding_box_with_str(font, &front_text);
+        let front_rect = bounding_box_with_str(lc.ctx, font, &front_text);
         rect = LogicalRect::from_position_size(rect.left_top(), front_rect.size());
         if !self.front_text.is_empty() {
             result.push(
@@ -194,14 +194,14 @@ impl Widget for TextBox {
         if lc.ctx.has_focus(self) {
             let cursor_char = self.back_text.last().cloned();
             let cursor_char_size = cursor_char
-                .map(|c| bounding_box_with_str(font, &c.to_string()).size())
-                .unwrap_or_else(|| bounding_box_with_str(font, &'m'.to_string()).size());
+                .map(|c| bounding_box_with_str(lc.ctx, font, &c.to_string()).size())
+                .unwrap_or_else(|| bounding_box_with_str(lc.ctx, font, &'m'.to_string()).size());
             if let Some(ref composition) = self.composition {
                 for clause in composition.clauses.iter() {
                     let text = composition.chars[clause.range.start..clause.range.end]
                         .iter()
                         .collect::<String>();
-                    let text_rect = bounding_box_with_str(font, &text);
+                    let text_rect = bounding_box_with_str(lc.ctx, font, &text);
                     rect = LogicalRect::from_position_size(
                         LogicalPosition::new(rect.right, rect.top),
                         LogicalSize::new(
@@ -226,14 +226,14 @@ impl Widget for TextBox {
                     let text = composition.chars[..clause.range.end]
                         .iter()
                         .collect::<String>();
-                    bounding_box_with_str(font, &text)
+                    bounding_box_with_str(lc.ctx, font, &text)
                 } else if composition.cursor_position == 0 {
                     LogicalRect::new(0.0, rect.top, 0.0, rect.bottom)
                 } else {
                     let text = composition.chars[..composition.cursor_position]
                         .iter()
                         .collect::<String>();
-                    bounding_box_with_str(font, &text)
+                    bounding_box_with_str(lc.ctx, font, &text)
                 };
                 let cursor_rect = LogicalRect::from_position_size(
                     LogicalPosition::new(
@@ -269,7 +269,7 @@ impl Widget for TextBox {
         }
         if !self.back_text.is_empty() {
             let back_text = self.back_text.iter().collect::<String>();
-            let back_rect = bounding_box_with_str(font, &back_text);
+            let back_rect = bounding_box_with_str(lc.ctx, font, &back_text);
             rect = LogicalRect::from_position_size(
                 LogicalPosition::new(rect.right, rect.top),
                 LogicalSize::new(

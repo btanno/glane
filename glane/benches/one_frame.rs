@@ -79,20 +79,10 @@ fn input(bencher: divan::Bencher) {
 fn layout(bencher: divan::Bencher) {
     bencher
         .with_inputs(|| {
-            let mouse_input = glane::Input::MouseInput(glane::MouseInput {
-                button: glane::MouseButton::Left,
-                button_state: glane::ButtonState::Pressed,
-                mouse_state: glane::MouseState {
-                    position: (0.0, 0.0).into(),
-                    buttons: [glane::MouseButton::Left].into(),
-                },
-            });
-            (create_scene(), mouse_input)
+            create_scene()
         })
-        .bench_values(|(mut scene, input)| {
-            let mut events = glane::Events::new();
-            scene.input(input, &mut events);
-            divan::black_box(scene.layout());
+        .bench_values(|mut scene| {
+            scene.layout();
         });
 }
 

@@ -38,13 +38,13 @@ impl Widget for Text {
         funcs.apply(self);
     }
 
-    fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
+    fn size(&self, lc: &LayoutContext) -> LogicalSize<f32> {
         let font = self
             .style
             .font
             .as_ref()
-            .unwrap_or_else(|| ctx.ctx.default_font.as_ref().unwrap());
-        let shape = bounding_box_with_str(font, &self.text);
+            .unwrap_or_else(|| lc.ctx.default_font.as_ref().unwrap());
+        let shape = bounding_box_with_str(lc.ctx, font, &self.text);
         LogicalSize::new(shape.right - shape.left, shape.bottom - shape.top)
     }
 

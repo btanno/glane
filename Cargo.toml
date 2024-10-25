@@ -9,3 +9,6 @@ license = "MIT"
 description = "GUI layout library"
 repository = "https://github.com/btanno/glane"
 
+[profile.release-debug]
+inherits = "release"
+debug = 1

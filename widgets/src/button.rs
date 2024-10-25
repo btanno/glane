@@ -79,7 +79,7 @@ impl Widget for Button {
             .font
             .as_ref()
             .unwrap_or_else(|| ctx.ctx.default_font.as_ref().unwrap());
-        let rect = bounding_box_with_str(font, &self.text);
+        let rect = bounding_box_with_str(ctx.ctx, font, &self.text);
         LogicalSize::new(
             rect.right + self.style.padding.left + self.style.padding.right,
             rect.bottom + self.style.padding.top + self.style.padding.bottom,
