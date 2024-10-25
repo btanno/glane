@@ -92,7 +92,7 @@ impl Scene {
                         .ok()
                         .map(|face| Font::new(&face, 14.0)),
                     prev_input: None,
-                    bounding_box_cache: BoundingBoxCache::new(300),
+                    bounding_box_cache: BoundingBoxCache::new(256),
                 },
                 root,
                 prev_input: None,

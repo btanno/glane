@@ -185,12 +185,15 @@ mod bounding_box {
                 } else {
                     elements.push(Element {
                         font: font.clone(),
-                        rects: VecDeque::new(),
+                        rects: VecDeque::with_capacity(self.max_size),
                     });
                     elements.last_mut().unwrap()
                 };
-            if let Some((_, rect)) = element.rects.iter().find(|(str, _rc)| str == s) {
-                return *rect;
+            if let Some(index) = element.rects.iter().position(|(str, _rc)| str == s) {
+                let obj = element.rects.remove(index).unwrap();
+                let rect = obj.1;
+                element.rects.push_front(obj);
+                return rect;
             }
             if element.rects.len() >= self.max_size {
                 element.rects.pop_back();
