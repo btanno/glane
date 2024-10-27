@@ -222,6 +222,28 @@ impl Canvas {
                             &self.slider_knob,
                         );
                     }
+                    t if t == TypeId::of::<glane::widgets::CheckBox>() => {
+                        let rect = l.rect();
+                        let size = rect.size();
+                        cmd.fill(
+                            &pnte::Rect::from_point_size(
+                                (rect.left, rect.top),
+                                (size.width, size.height),
+                            ),
+                            &self.button_bg,
+                        );
+                    }
+                    t if t == TypeId::of::<glane::widgets::check_box::Check>() => {
+                        let rect = l.rect();
+                        let size = rect.size();
+                        cmd.fill(
+                            &pnte::Rect::from_point_size(
+                                (rect.left, rect.top),
+                                (size.width, size.height),
+                            ),
+                            &self.selected_bg,
+                        );
+                    }
                     _ => {
                         let rect = l.rect();
                         cmd.stroke(
@@ -351,6 +373,7 @@ fn main() -> anyhow::Result<()> {
         );
         handle
     };
+    scene.push_child(&left, glane::widgets::CheckBox::new("CheckBox", false));
     let row_dropdown_box = scene.push_child(&right, glane::widgets::Row::new());
     scene.push_child(&row_dropdown_box, glane::widgets::Label::new("DropdownBox"));
     let dropdown_box = scene.push_child(&row_dropdown_box, glane::widgets::DropdownBox::new());

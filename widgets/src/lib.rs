@@ -1,4 +1,5 @@
 pub mod button;
+pub mod check_box;
 pub mod container;
 pub mod dropdown_box;
 pub mod empty;
@@ -21,5 +22,6 @@ pub use scroll_bar::ScrollBar;
 pub use slider::Slider;
 pub use text::Text;
 pub use text_box::TextBox;
+pub use check_box::CheckBox;
 
 use glane_core::*;

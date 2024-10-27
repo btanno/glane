@@ -171,6 +171,7 @@ pub enum WidgetState {
 }
 
 impl WidgetState {
+    #[inline]
     pub fn current(rect: &LogicalRect<f32>, mouse_state: &MouseState) -> Self {
         if rect.contains(&mouse_state.position) {
             if mouse_state.buttons.contains(MouseButton::Left) {
