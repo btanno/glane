@@ -210,14 +210,10 @@ impl Widget for Row {
     }
 
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
-        let mut size = LogicalSize::new(0.0f32, 0.0);
+        let mut size = LogicalSize::new(ctx.rect.size().width, 0.0);
         for child in self.children.iter() {
             let s = child.size(ctx);
-            size.width += s.width;
             size.height = s.height.max(size.height);
-        }
-        if ctx.rect.right < ctx.rect.left + size.width {
-            size.width = ctx.rect.right - ctx.rect.left;
         }
         size
     }
@@ -225,7 +221,7 @@ impl Widget for Row {
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
         let mut rect = lc.rect;
-        for child in self.children.iter() {
+        for child in self.children.iter().take(self.children.len() - 1) {
             let s = child.size(&lc.next(rect, lc.layer, lc.selected));
             let h = (size.height - s.height) / 2.0;
             let r = rect.left + s.width;
@@ -242,6 +238,19 @@ impl Widget for Row {
                 result,
             );
             rect.left += s.width + self.space;
+        }
+        if let Some(child) = self.children.last() {
+            let s = child.size(&lc.next(rect, lc.layer, lc.selected));
+            let h = (size.height - s.height) / 2.0;
+            let rb = LogicalPosition::new(lc.rect.right, rect.bottom);
+            child.layout(
+                lc.next(
+                    LogicalRect::from_positions(LogicalPosition::new(rect.left, rect.top + h), rb),
+                    lc.layer,
+                    lc.selected,
+                ),
+                result,
+            );
         }
     }
 }
