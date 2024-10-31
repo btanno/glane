@@ -74,11 +74,6 @@ struct Canvas {
     list_box_bg: pnte::SolidColorBrush,
     slider_bg: pnte::SolidColorBrush,
     slider_knob: pnte::SolidColorBrush,
-    button_type: TypeId,
-    text_box_type: TypeId,
-    scroll_bar_type: TypeId,
-    scroll_bar_thumb_type: TypeId,
-    list_box_type: TypeId,
 }
 
 impl Canvas {
@@ -107,13 +102,8 @@ impl Canvas {
         let scroll_bar_thumb = pnte::SolidColorBrush::new(&ctx, (0.8, 0.8, 0.8, 1.0))?;
         let selected_bg = pnte::SolidColorBrush::new(&ctx, (0.0, 0.3, 0.0, 1.0))?;
         let list_box_bg = pnte::SolidColorBrush::new(&ctx, (0.1, 0.1, 0.1, 0.9))?;
-        let button_type = TypeId::of::<glane::widgets::Button>();
         let slider_bg = pnte::SolidColorBrush::new(&ctx, (0.3, 0.3, 0.3, 1.0))?;
         let slider_knob = pnte::SolidColorBrush::new(&ctx, (0.8, 0.8, 0.8, 1.0))?;
-        let text_box_type = TypeId::of::<glane::widgets::TextBox>();
-        let scroll_bar_type = TypeId::of::<glane::widgets::ScrollBar>();
-        let scroll_bar_thumb_type = TypeId::of::<glane::widgets::scroll_bar::Thumb>();
-        let list_box_type = TypeId::of::<glane::widgets::ListBox>();
         Ok(Self {
             ctx,
             render_target,
@@ -129,11 +119,6 @@ impl Canvas {
             list_box_bg,
             slider_bg,
             slider_knob,
-            button_type,
-            text_box_type,
-            scroll_bar_type,
-            scroll_bar_thumb_type,
-            list_box_type,
         })
     }
 
@@ -153,7 +138,7 @@ impl Canvas {
                     return;
                 }
                 match l.handle().type_id() {
-                    t if t == self.button_type => {
+                    t if t == TypeId::of::<glane::widgets::Button>() => {
                         let brush = match area.widget_state {
                             glane::WidgetState::None => &self.button_bg,
                             glane::WidgetState::Hover => &self.button_bg_hover,
@@ -165,21 +150,21 @@ impl Canvas {
                             brush,
                         );
                     }
-                    t if t == self.scroll_bar_type => {
+                    t if t == TypeId::of::<glane::widgets::ScrollBar>() => {
                         let rect = l.rect();
                         cmd.fill(
                             &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
                             &self.scroll_bar_bg,
                         );
                     }
-                    t if t == self.scroll_bar_thumb_type => {
+                    t if t == TypeId::of::<glane::widgets::scroll_bar::Thumb>() => {
                         let rect = l.rect();
                         cmd.fill(
                             &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
                             &self.scroll_bar_thumb,
                         );
                     }
-                    t if t == self.list_box_type => {
+                    t if t == TypeId::of::<glane::widgets::ListBox>() => {
                         cmd.fill(
                             &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
                             &self.list_box_bg,
@@ -191,7 +176,7 @@ impl Canvas {
                             None,
                         );
                     }
-                    t if t == self.text_box_type => {
+                    t if t == TypeId::of::<glane::widgets::TextBox>() => {
                         let rect = l.rect();
                         cmd.stroke(
                             &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
@@ -373,7 +358,7 @@ fn main() -> anyhow::Result<()> {
         );
         handle
     };
-    scene.push_child(&left, glane::widgets::CheckBox::new("CheckBox", false));
+    let check_box = scene.push_child(&left, glane::widgets::CheckBox::new("CheckBox", false));
     let row_dropdown_box = scene.push_child(&right, glane::widgets::Row::new());
     scene.push_child(&row_dropdown_box, glane::widgets::Label::new("DropdownBox"));
     let dropdown_box = scene.push_child(&row_dropdown_box, glane::widgets::DropdownBox::new());
@@ -555,6 +540,12 @@ fn main() -> anyhow::Result<()> {
                 match msg {
                     glane::widgets::slider::Message::Changed(v) => {
                         println!("slider changed: {v}");
+                    }
+                }
+            } else if let Some(msg) = event.message(&check_box) {
+                match msg {
+                    glane::widgets::check_box::Message::Clicked(b) => {
+                        println!("check box: {b}");
                     }
                 }
             }
