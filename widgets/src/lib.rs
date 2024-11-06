@@ -1,6 +1,6 @@
 pub mod button;
 pub mod check_box;
-pub mod container;
+pub mod containers;
 pub mod dropdown_box;
 pub mod empty;
 pub mod label;
@@ -12,7 +12,7 @@ pub mod text;
 pub mod text_box;
 
 pub use button::Button;
-pub use container::*;
+pub use containers::*;
 pub use dropdown_box::DropdownBox;
 pub use empty::Empty;
 pub use label::Label;

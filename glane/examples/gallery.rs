@@ -362,7 +362,7 @@ fn main() -> anyhow::Result<()> {
     let row_dropdown_box = scene.push_child(&right, glane::widgets::Row::new());
     scene.push_child(&row_dropdown_box, glane::widgets::Label::new("DropdownBox"));
     let dropdown_box = scene.push_child(&row_dropdown_box, glane::widgets::DropdownBox::new());
-    for c in 'A'..='C' {
+    for c in 'A'..='Z' {
         scene.push_child(&dropdown_box, glane::widgets::Text::new(c.to_string()));
     }
     let row_list_box = scene.push_child(&right, glane::widgets::Row::new());
