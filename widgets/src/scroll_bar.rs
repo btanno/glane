@@ -71,6 +71,7 @@ pub struct ScrollBar {
     pub thumb: Thumb,
     current: usize,
     d: f32,
+    min_collision: f32,
 }
 
 impl ScrollBar {
@@ -83,6 +84,7 @@ impl ScrollBar {
             current: 0,
             thumb: Thumb::new(thumb_len),
             d: 0.0,
+            min_collision: 15.0,
         }
     }
 
@@ -128,7 +130,10 @@ impl Widget for ScrollBar {
         let Some(layout) = ctx.find_layout(self).next() else {
             return ControlFlow::Continue;
         };
-        let Some(thumb_layout) = ctx.find_layout(&self.thumb).next() else {
+        let Some(thumb_layout) = ctx
+            .find_layout(&self.thumb)
+            .find(|l| matches!(l, LayoutElement::Collision(_)))
+        else {
             return ControlFlow::Continue;
         };
         let size = layout.rect().size();
@@ -195,6 +200,16 @@ impl Widget for ScrollBar {
                 );
                 let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
                 let thumb_rect = LogicalRect::from_position_size(thumb_pt, thumb_size);
+                let collision_rect = if thumb_rect.size().height >= self.min_collision {
+                    thumb_rect
+                } else {
+                    LogicalRect::new(
+                        thumb_rect.left,
+                        thumb_rect.top - self.min_collision / 2.0,
+                        thumb_rect.right,
+                        thumb_rect.bottom + self.min_collision / 2.0,
+                    )
+                };
                 result.push(
                     &lc,
                     LayoutElement::area(self, WidgetState::None, rect, false),
@@ -202,6 +217,10 @@ impl Widget for ScrollBar {
                 result.push(
                     &lc,
                     LayoutElement::area(&self.thumb, self.thumb.widget_state, thumb_rect, false),
+                );
+                result.push(
+                    &lc,
+                    LayoutElement::collision(&self.thumb, self.thumb.widget_state, collision_rect),
                 );
             }
             Direction::Horizontal => {
@@ -215,6 +234,16 @@ impl Widget for ScrollBar {
                 );
                 let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
                 let thumb_rect = LogicalRect::from_position_size(thumb_pt, thumb_size);
+                let collision_rect = if thumb_rect.size().height >= self.min_collision {
+                    thumb_rect
+                } else {
+                    LogicalRect::new(
+                        thumb_rect.left - self.min_collision / 2.0,
+                        thumb_rect.top,
+                        thumb_rect.right + self.min_collision / 2.0,
+                        thumb_rect.bottom,
+                    )
+                };
                 result.push(
                     &lc,
                     LayoutElement::area(self, WidgetState::None, rect, false),
@@ -222,6 +251,10 @@ impl Widget for ScrollBar {
                 result.push(
                     &lc,
                     LayoutElement::area(&self.thumb, self.thumb.widget_state, thumb_rect, false),
+                );
+                result.push(
+                    &lc,
+                    LayoutElement::collision(&self.thumb, self.thumb.widget_state, collision_rect),
                 );
             }
         }

@@ -9,6 +9,13 @@ pub struct Area {
 }
 
 #[derive(Clone, Debug)]
+pub struct Collision {
+    pub handle: AnyHandle,
+    pub widget_state: WidgetState,
+    pub rect: LogicalRect<f32>,
+}
+
+#[derive(Clone, Debug)]
 pub struct Text {
     pub handle: AnyHandle,
     pub widget_state: WidgetState,
@@ -44,6 +51,7 @@ pub struct Clipping {
 #[non_exhaustive]
 pub enum LayoutElement {
     Area(Area),
+    Collision(Collision),
     Text(Text),
     CompositionText(CompositionText),
     Cursor(Cursor),
@@ -64,6 +72,19 @@ impl LayoutElement {
             widget_state,
             rect,
             selected,
+        })
+    }
+
+    #[inline]
+    pub fn collision(
+        widget: &impl Widget,
+        widget_state: WidgetState,
+        rect: LogicalRect<f32>,
+    ) -> Self {
+        Self::Collision(Collision {
+            handle: AnyHandle::new(widget),
+            widget_state,
+            rect,
         })
     }
 
@@ -136,6 +157,7 @@ impl LayoutElement {
     pub fn handle(&self) -> AnyHandle {
         match self {
             Self::Area(a) => a.handle,
+            Self::Collision(c) => c.handle,
             Self::Text(t) => t.handle,
             Self::CompositionText(t) => t.handle,
             Self::Cursor(c) => c.handle,
@@ -148,6 +170,7 @@ impl LayoutElement {
     pub fn rect(&self) -> &LogicalRect<f32> {
         match self {
             Self::Area(a) => &a.rect,
+            Self::Collision(c) => &c.rect,
             Self::Text(t) => &t.rect,
             Self::CompositionText(t) => &t.rect,
             Self::Cursor(c) => &c.rect,
