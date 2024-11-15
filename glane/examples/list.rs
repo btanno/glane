@@ -141,7 +141,7 @@ impl Canvas {
                         &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
                         brush,
                     );
-                } else if l.handle().type_id() == TypeId::of::<ScrollBar>() {
+                } else if l.handle().type_id() == TypeId::of::<VScrollBar>() {
                     let rect = l.rect();
                     cmd.fill(
                         &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),

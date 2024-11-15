@@ -98,7 +98,7 @@ impl Widget for DropdownBox {
         if list_visiblity {
             self.list.input(ctx, input, events);
             let ret = events.iter().enumerate().find_map(|(i, event)| {
-                if let Some(msg) = event.message(&Handle::new(&self.list)) {
+                if let Some(msg) = event.message(&self.list) {
                     let list_box::Message::Selected(selected) = msg;
                     Some((i, *selected))
                 } else {

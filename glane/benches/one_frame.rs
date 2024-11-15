@@ -15,12 +15,14 @@ fn create_scene() -> glane::Scene {
     scene.push_child(&row_text_box, glane::widgets::TextBox::new());
     let row_scroll_bar = scene.push_child(&left, glane::widgets::Row::new());
     scene.push_child(&row_scroll_bar, glane::widgets::Label::new("ScrollBar"));
-    let scroll_bar = glane::widgets::ScrollBar::new(100, 10);
+    let scroll_bar =
+        glane::widgets::VScrollBar::new(100, 10);
     scene.push_child(
         &row_scroll_bar,
         glane::widgets::MaxSize::new(None, Some(200.0), scroll_bar),
     );
-    let scroll_bar = glane::widgets::ScrollBar::new(1000, 10);
+    let scroll_bar =
+        glane::widgets::VScrollBar::new(1000, 10);
     scene.push_child(
         &row_scroll_bar,
         glane::widgets::MaxSize::new(None, Some(200.0), scroll_bar),

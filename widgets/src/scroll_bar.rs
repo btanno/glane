@@ -1,16 +1,9 @@
 use super::*;
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Direction {
-    Vertical,
-    Horizontal,
-}
-
 #[derive(Debug)]
 pub struct Style {
     pub width: f32,
     pub min_thumb_size: f32,
-    pub direction: Direction,
 }
 
 impl Default for Style {
@@ -18,9 +11,24 @@ impl Default for Style {
         Self {
             width: 13.0,
             min_thumb_size: 7.0,
-            direction: Direction::Vertical,
         }
     }
+}
+
+pub trait Direction: 'static {}
+
+mod direction {
+    use super::*;
+
+    #[derive(Debug)]
+    pub struct Vertical;
+    
+    impl Direction for Vertical {}
+
+    #[derive(Debug)]
+    pub struct Horizontal;
+
+    impl Direction for Horizontal {}
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -64,7 +72,7 @@ impl Widget for Thumb {
 }
 
 #[derive(Debug)]
-pub struct ScrollBar {
+pub struct ScrollBar<T: Direction> {
     id: Id,
     style: Style,
     pub len: usize,
@@ -72,9 +80,10 @@ pub struct ScrollBar {
     current: usize,
     d: f32,
     min_collision: f32,
+    _direction: std::marker::PhantomData<T>,
 }
 
-impl ScrollBar {
+impl<T: Direction> ScrollBar<T> {
     #[inline]
     pub fn new(len: usize, thumb_len: usize) -> Self {
         Self {
@@ -85,6 +94,7 @@ impl ScrollBar {
             thumb: Thumb::new(thumb_len),
             d: 0.0,
             min_collision: 15.0,
+            _direction: std::marker::PhantomData,
         }
     }
 
@@ -119,13 +129,13 @@ impl ScrollBar {
     }
 }
 
-impl HasId for ScrollBar {
+impl<T: Direction> HasId for ScrollBar<T> {
     fn id(&self) -> Id {
         self.id
     }
 }
 
-impl Widget for ScrollBar {
+impl Widget for ScrollBar<direction::Vertical> {
     fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow {
         let Some(layout) = ctx.find_layout(self).next() else {
             return ControlFlow::Continue;
@@ -153,17 +163,11 @@ impl Widget for ScrollBar {
             }
             Input::CursorMoved(m) => {
                 if self.thumb.widget_state == WidgetState::Pressed {
-                    match self.style.direction {
-                        Direction::Vertical => {
-                            let height = size.height - thumb_size.height;
-                            let p = m.mouse_state.position.y - layout.rect().top - self.d;
-                            let current = (self.len - self.thumb.len) as f32 * p / height;
-                            self.current =
-                                (current.floor() as usize).min(self.len - self.thumb.len - 1);
-                            events.push_message(self, Message::Changed(self.current));
-                        }
-                        Direction::Horizontal => {}
-                    }
+                    let height = size.height - thumb_size.height;
+                    let p = m.mouse_state.position.y - layout.rect().top - self.d;
+                    let current = (self.len - self.thumb.len) as f32 * p / height;
+                    self.current = (current.floor() as usize).min(self.len - self.thumb.len - 1);
+                    events.push_message(self, Message::Changed(self.current))
                 }
             }
             _ => {}
@@ -176,91 +180,136 @@ impl Widget for ScrollBar {
     }
 
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
-        match self.style.direction {
-            Direction::Vertical => {
-                LogicalSize::new(self.style.width, ctx.rect.bottom - ctx.rect.top)
-            }
-            Direction::Horizontal => {
-                LogicalSize::new(ctx.rect.right - ctx.rect.left, self.style.width)
-            }
-        }
+        LogicalSize::new(self.style.width, ctx.rect.bottom - ctx.rect.top)
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
-        match self.style.direction {
-            Direction::Vertical => {
-                let thumb_size = LogicalSize::new(
-                    self.style.width,
-                    (self.thumb.len as f32 / self.len as f32) * size.height,
-                );
-                let thumb_pt = LogicalPosition::new(
-                    lc.rect.left,
-                    lc.rect.top + (self.current as f32 / self.len as f32) * size.height,
-                );
-                let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
-                let thumb_rect = LogicalRect::from_position_size(thumb_pt, thumb_size);
-                let collision_rect = if thumb_rect.size().height >= self.min_collision {
-                    thumb_rect
-                } else {
-                    LogicalRect::new(
-                        thumb_rect.left,
-                        thumb_rect.top - self.min_collision / 2.0,
-                        thumb_rect.right,
-                        thumb_rect.bottom + self.min_collision / 2.0,
-                    )
-                };
-                result.push(
-                    &lc,
-                    LayoutElement::area(self, WidgetState::None, rect, false),
-                );
-                result.push(
-                    &lc,
-                    LayoutElement::area(&self.thumb, self.thumb.widget_state, thumb_rect, false),
-                );
-                result.push(
-                    &lc,
-                    LayoutElement::collision(&self.thumb, self.thumb.widget_state, collision_rect),
-                );
-            }
-            Direction::Horizontal => {
-                let thumb_size = LogicalSize::new(
-                    (self.thumb.len as f32 / self.len as f32) * size.width,
-                    self.style.width,
-                );
-                let thumb_pt = LogicalPosition::new(
-                    lc.rect.left + (self.current as f32 / self.len as f32) * size.width,
-                    lc.rect.top,
-                );
-                let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
-                let thumb_rect = LogicalRect::from_position_size(thumb_pt, thumb_size);
-                let collision_rect = if thumb_rect.size().height >= self.min_collision {
-                    thumb_rect
-                } else {
-                    LogicalRect::new(
-                        thumb_rect.left - self.min_collision / 2.0,
-                        thumb_rect.top,
-                        thumb_rect.right + self.min_collision / 2.0,
-                        thumb_rect.bottom,
-                    )
-                };
-                result.push(
-                    &lc,
-                    LayoutElement::area(self, WidgetState::None, rect, false),
-                );
-                result.push(
-                    &lc,
-                    LayoutElement::area(&self.thumb, self.thumb.widget_state, thumb_rect, false),
-                );
-                result.push(
-                    &lc,
-                    LayoutElement::collision(&self.thumb, self.thumb.widget_state, collision_rect),
-                );
-            }
-        }
+        let thumb_size = LogicalSize::new(
+            self.style.width,
+            (self.thumb.len as f32 / self.len as f32) * size.height,
+        );
+        let thumb_pt = LogicalPosition::new(
+            lc.rect.left,
+            lc.rect.top + (self.current as f32 / self.len as f32) * size.height,
+        );
+        let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
+        let thumb_rect = LogicalRect::from_position_size(thumb_pt, thumb_size);
+        let collision_rect = if thumb_rect.size().height >= self.min_collision {
+            thumb_rect
+        } else {
+            LogicalRect::new(
+                thumb_rect.left,
+                thumb_rect.top - self.min_collision / 2.0,
+                thumb_rect.right,
+                thumb_rect.bottom + self.min_collision / 2.0,
+            )
+        };
+        result.push(
+            &lc,
+            LayoutElement::area(self, WidgetState::None, rect, false),
+        );
+        result.push(
+            &lc,
+            LayoutElement::area(&self.thumb, self.thumb.widget_state, thumb_rect, false),
+        );
+        result.push(
+            &lc,
+            LayoutElement::collision(&self.thumb, self.thumb.widget_state, collision_rect),
+        );
     }
 }
 
-impl WidgetMessage for ScrollBar {
+impl Widget for ScrollBar<direction::Horizontal> {
+    fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow {
+        let Some(layout) = ctx.find_layout(self).next() else {
+            return ControlFlow::Continue;
+        };
+        let Some(thumb_layout) = ctx
+            .find_layout(&self.thumb)
+            .find(|l| matches!(l, LayoutElement::Collision(_)))
+        else {
+            return ControlFlow::Continue;
+        };
+        let size = layout.rect().size();
+        let thumb_size = thumb_layout.rect().size();
+        match input {
+            Input::MouseInput(m) => {
+                if thumb_layout.rect().contains(&m.mouse_state.position) {
+                    if m.button == MouseButton::Left && m.button_state == ButtonState::Pressed {
+                        self.d = m.mouse_state.position.x - thumb_layout.rect().left;
+                        self.thumb.widget_state = WidgetState::Pressed;
+                    } else {
+                        self.thumb.widget_state = WidgetState::Hover;
+                    }
+                } else {
+                    self.thumb.widget_state = WidgetState::None;
+                }
+            }
+            Input::CursorMoved(m) => {
+                if self.thumb.widget_state == WidgetState::Pressed {
+                    let width = size.width - thumb_size.width;
+                    let p = m.mouse_state.position.x - layout.rect().left - self.d;
+                    let current = (self.len - self.thumb.len) as f32 * p / width;
+                    self.current = (current.floor() as usize).min(self.len - self.thumb.len - 1);
+                    events.push_message(self, Message::Changed(self.current));
+                }
+            }
+            _ => {}
+        }
+        ControlFlow::Continue
+    }
+    fn apply(&mut self, funcs: &mut ApplyFuncs) {
+        funcs.apply(self);
+    }
+
+    fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
+        LogicalSize::new(ctx.rect.right - ctx.rect.left, self.style.width)
+    }
+    fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
+        let size = self.size(&lc);
+        let thumb_size = LogicalSize::new(
+            (self.thumb.len as f32 / self.len as f32) * size.width,
+            self.style.width,
+        );
+        let thumb_pt = LogicalPosition::new(
+            lc.rect.left + (self.current as f32 / self.len as f32) * size.width,
+            lc.rect.top,
+        );
+        let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
+        let thumb_rect = LogicalRect::from_position_size(thumb_pt, thumb_size);
+        let collision_rect = if thumb_rect.size().height >= self.min_collision {
+            thumb_rect
+        } else {
+            LogicalRect::new(
+                thumb_rect.left - self.min_collision / 2.0,
+                thumb_rect.top,
+                thumb_rect.right + self.min_collision / 2.0,
+                thumb_rect.bottom,
+            )
+        };
+        result.push(
+            &lc,
+            LayoutElement::area(self, WidgetState::None, rect, false),
+        );
+        result.push(
+            &lc,
+            LayoutElement::area(&self.thumb, self.thumb.widget_state, thumb_rect, false),
+        );
+        result.push(
+            &lc,
+            LayoutElement::collision(&self.thumb, self.thumb.widget_state, collision_rect),
+        );
+    }
+}
+
+impl WidgetMessage for ScrollBar<direction::Vertical> {
     type Message = Message;
 }
+
+impl WidgetMessage for ScrollBar<direction::Horizontal> {
+    type Message = Message;
+}
+
+pub type VScrollBar = ScrollBar<direction::Vertical>;
+pub type HScrollBar = ScrollBar<direction::Horizontal>;

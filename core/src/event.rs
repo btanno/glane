@@ -41,22 +41,24 @@ impl Event {
     }
 
     #[inline]
-    pub fn message<T>(&self, handle: &Handle<T>) -> Option<&T::Message>
+    pub fn message<T>(&self, handle: impl Into<Handle<T>>) -> Option<&T::Message>
     where
         T: WidgetMessage,
     {
-        if handle != &self.handle {
+        let handle = handle.into();
+        if handle != self.handle {
             return None;
         }
         self.object.downcast_ref::<T::Message>()
     }
 
     #[inline]
-    pub fn state_changed<T>(&self, handle: &Handle<T>) -> Option<&StateChanged>
+    pub fn state_changed<T>(&self, handle: impl Into<Handle<T>>) -> Option<&StateChanged>
     where
         T: Widget,
     {
-        if handle != &self.handle {
+        let handle = handle.into();
+        if handle != self.handle {
             return None;
         }
         self.object.downcast_ref::<StateChanged>()

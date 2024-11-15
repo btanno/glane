@@ -68,6 +68,24 @@ where
     }
 }
 
+impl<T> From<&T> for Handle<T>
+where
+    T: Widget
+{
+    fn from(value: &T) -> Self {
+        Self::new(value)
+    }
+}
+
+impl<T> From<&Handle<T>> for Handle<T>
+where
+    T: Widget
+{
+    fn from(value: &Handle<T>) -> Self {
+        value.clone()
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct AnyHandle {
     id: Id,

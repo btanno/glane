@@ -150,7 +150,9 @@ impl Canvas {
                             brush,
                         );
                     }
-                    t if t == TypeId::of::<glane::widgets::ScrollBar>() => {
+                    t if t == TypeId::of::<glane::widgets::VScrollBar>()
+                        || t == TypeId::of::<glane::widgets::HScrollBar>() =>
+                    {
                         let rect = l.rect();
                         cmd.fill(
                             &pnte::Rect::new(rect.left, rect.top, rect.right, rect.bottom),
@@ -330,7 +332,7 @@ fn main() -> anyhow::Result<()> {
     let row_scroll_bar = scene.push_child(&left, glane::widgets::Row::new());
     scene.push_child(&row_scroll_bar, glane::widgets::Label::new("ScrollBar"));
     let scroll_bar = {
-        let scroll_bar = glane::widgets::ScrollBar::new(100, 10);
+        let scroll_bar = glane::widgets::VScrollBar::new(100, 10);
         let handle = glane::Handle::new(&scroll_bar);
         scene.push_child(
             &row_scroll_bar,
@@ -339,7 +341,7 @@ fn main() -> anyhow::Result<()> {
         handle
     };
     let scroll_bar2 = {
-        let scroll_bar = glane::widgets::ScrollBar::new(1000, 10);
+        let scroll_bar = glane::widgets::VScrollBar::new(1000, 10);
         let handle = glane::Handle::new(&scroll_bar);
         scene.push_child(
             &row_scroll_bar,
@@ -379,6 +381,19 @@ fn main() -> anyhow::Result<()> {
     for c in 'a'..='z' {
         scene.push_child(&list_box, glane::widgets::Text::new(c.to_string()));
     }
+    let inner_frame = scene.push_child(
+        &right,
+        glane::widgets::InnerFrame::new(
+            glane::LogicalSize::new(500.0, 256.0),
+            glane::LogicalSize::new(1920.0, 1024.0),
+        ),
+    );
+    let inner_buttons = (0..28)
+        .map(|i| {
+            let button = glane::widgets::Button::new(format!("Button{i}"));
+            scene.push_child(&inner_frame, button)
+        })
+        .collect::<Vec<_>>();
     let mut canvas = Canvas::new(&window, &scene)?;
     let redrawing = Rc::new(Cell::new(false));
     let redraw = |window: &wiard::Window| {
@@ -546,6 +561,16 @@ fn main() -> anyhow::Result<()> {
                 match msg {
                     glane::widgets::check_box::Message::Clicked(b) => {
                         println!("check box: {b}");
+                    }
+                }
+            } else {
+                for (i, inner_button) in inner_buttons.iter().enumerate() {
+                    if let Some(msg) = event.message(inner_button) {
+                        match msg {
+                            glane::widgets::button::Message::Clicked => {
+                                println!("inner frame button: {i}");
+                            }
+                        }
                     }
                 }
             }

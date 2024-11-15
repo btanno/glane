@@ -178,6 +178,62 @@ impl LayoutElement {
             Self::EndClipping(c) => &c.rect,
         }
     }
+
+    #[inline]
+    pub fn as_area(&self) -> Option<&Area> {
+        match self {
+            Self::Area(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn as_collision(&self) -> Option<&Collision> {
+        match self {
+            Self::Collision(v) => Some(v),
+            _ => None,
+        }
+    }
+    
+    #[inline]
+    pub fn as_text(&self) -> Option<&Text> {
+        match self {
+            Self::Text(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn as_composition_text(&self) -> Option<&CompositionText> {
+        match self {
+            Self::CompositionText(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn as_cursor(&self) -> Option<&Cursor> {
+        match self {
+            Self::Cursor(v) => Some(v),
+            _ => None,
+        }
+    }
+    
+    #[inline]
+    pub fn as_start_clipping(&self) -> Option<&Clipping> {
+        match self {
+            Self::StartClipping(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn as_end_clipping(&self) -> Option<&Clipping> {
+        match self {
+            Self::EndClipping(v) => Some(v),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -235,6 +291,19 @@ impl LayoutConstructor {
     }
 
     #[inline]
+    pub fn append(&mut self, mut other: Self) {
+        self.v.append(&mut other.v);
+    }
+
+    #[inline]
+    pub fn retain<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&LayoutElement) -> bool,
+    {
+        self.v.retain(|a| f(&a.element));
+    }
+
+    #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &LayoutElement> {
         self.v.iter().map(|elem| &elem.element)
     }
@@ -242,6 +311,32 @@ impl LayoutConstructor {
     #[inline]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut LayoutElement> {
         self.v.iter_mut().map(|elem| &mut elem.element)
+    }
+
+    #[inline]
+    pub fn clipping(&self) -> Option<LogicalRect<f32>> {
+        let mut result = None;
+        let mut end_count = 0;
+        for elem in self.v.iter().rev() {
+            match &elem.element {
+                LayoutElement::StartClipping(ev) => {
+                    if end_count == 0 {
+                        result = Some(ev.rect);
+                        break;
+                    } else {
+                        end_count -= 1;
+                        if end_count < 0 {
+                            return None;
+                        }
+                    }
+                }
+                LayoutElement::EndClipping(_) => {
+                    end_count += 1;
+                }
+                _ => {}
+            }
+        }
+        result
     }
 }
 
