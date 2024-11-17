@@ -67,6 +67,18 @@ impl Widget for InnerFrame {
                         None
                     }
                 }
+                Input::MouseWheel(ev) => {
+                    if self.entered || rc.contains(&ev.mouse_state.position) {
+                        let vbar = &mut self.vscroll;
+                        let a = ctx.default_font.as_ref().map(|df| df.size).unwrap_or(1.0) as isize;
+                        let d = a * ev.distance as isize;
+                        vbar.advance(d as isize);
+                        self.position.y = (self.position.y + d as f32)
+                            .max(0.0)
+                            .min(self.size.height - vbar.thumb.len as isize as f32);
+                    }
+                    None
+                }
                 _ => None,
             }
         } else {
@@ -85,7 +97,10 @@ impl Widget for InnerFrame {
             } else {
                 let layered_children = ctx.layout.iter().filter(|l| {
                     (l.handle().id() == child.id()
-                        || l.ancestors().iter().find(|a| a.id() == child.id()).is_some())
+                        || l.ancestors()
+                            .iter()
+                            .find(|a| a.id() == child.id())
+                            .is_some())
                         && l.layer() > layer
                 });
                 if layered_children.count() > 0 {
@@ -95,8 +110,12 @@ impl Widget for InnerFrame {
                 }
             }
         }
-        self.vscroll.input(ctx, input, events);
-        self.hscroll.input(ctx, input, events);
+        if self.vscroll.input(ctx, input, events) == ControlFlow::Break {
+            return ControlFlow::Break;
+        }
+        if self.hscroll.input(ctx, input, events) == ControlFlow::Break {
+            return ControlFlow::Break;
+        }
         if let Some(vs) = events
             .iter()
             .rev()
@@ -189,9 +208,27 @@ impl Widget for InnerFrame {
                 lc.layer,
             ),
         );
+        let hscroll_size = self.hscroll.size(&lc.next(
+            self,
+            LogicalRect::from_position_size(
+                lc.rect.left_top(),
+                LogicalSize::new(
+                    self.viewport.width,
+                    self.viewport.height,
+                ),
+            ),
+            lc.layer,
+            lc.selected,
+        ));
         let vscroll_size = self.vscroll.size(&lc.next(
             self,
-            LogicalRect::from_position_size(lc.rect.left_top(), self.viewport),
+            LogicalRect::from_position_size(
+                lc.rect.left_top(),
+                LogicalSize::new(
+                    self.viewport.width,
+                    self.viewport.height + hscroll_size.height,
+                ),
+            ),
             lc.layer,
             lc.selected,
         ));
@@ -200,7 +237,7 @@ impl Widget for InnerFrame {
                 self,
                 LogicalRect::from_position_size(
                     LogicalPosition::new(
-                        lc.rect.left + self.viewport.width - vscroll_size.width,
+                        lc.rect.left + self.viewport.width,
                         lc.rect.top,
                     ),
                     vscroll_size,
@@ -210,26 +247,11 @@ impl Widget for InnerFrame {
             ),
             result,
         );
-        let hscroll_size = self.hscroll.size(&lc.next(
-            self,
-            LogicalRect::from_position_size(
-                lc.rect.left_top(),
-                LogicalSize::new(
-                    self.viewport.width - vscroll_size.width,
-                    self.viewport.height,
-                ),
-            ),
-            lc.layer,
-            lc.selected,
-        ));
         self.hscroll.layout(
             lc.next(
                 self,
                 LogicalRect::from_position_size(
-                    LogicalPosition::new(
-                        lc.rect.left,
-                        lc.rect.top + self.viewport.height - hscroll_size.height,
-                    ),
+                    LogicalPosition::new(lc.rect.left, lc.rect.top + self.viewport.height),
                     hscroll_size,
                 ),
                 lc.layer,
