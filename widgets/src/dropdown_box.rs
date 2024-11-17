@@ -73,6 +73,7 @@ impl Widget for DropdownBox {
                                     WidgetState::Pressed,
                                     self.widget_state,
                                 );
+                                self.list_visiblity = !self.list_visiblity;
                             }
                             ButtonState::Released => {
                                 self.widget_state = events.push_state_changed(
@@ -80,7 +81,6 @@ impl Widget for DropdownBox {
                                     WidgetState::Hover,
                                     self.widget_state,
                                 );
-                                self.list_visiblity = !self.list_visiblity;
                             }
                         }
                     }
