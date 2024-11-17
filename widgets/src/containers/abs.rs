@@ -51,6 +51,7 @@ where
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         self.child.layout(
             lc.next(
+                self,
                 LogicalRect::from_positions(self.position, lc.rect.right_bottom()),
                 lc.layer,
                 lc.selected,

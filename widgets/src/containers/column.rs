@@ -63,6 +63,7 @@ impl Widget for Column {
                 .map_or(s, |mh| LogicalSize::new(s.width, s.height.min(mh)));
             child.layout(
                 lc.next(
+                    self,
                     LogicalRect::from_position_size(
                         rect.left_top(),
                         LogicalSize::new(size.width, s.height),

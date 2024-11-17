@@ -139,14 +139,14 @@ impl Widget for DropdownBox {
         let mut rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
         result.push(
             &lc,
-            LayoutElement::area(self, self.widget_state, rect, false),
+            LayoutElement::area(self, self.widget_state, rect, &lc.ancestors, lc.layer, false),
         );
         rect.left += self.padding.left;
         rect.top += self.padding.top;
         rect.right -= self.padding.right;
         rect.bottom -= self.padding.bottom;
         if let Some(child) = self.list.selected_child() {
-            child.layout(lc.next(rect, lc.layer, lc.selected), result);
+            child.layout(lc.next(self, rect, lc.layer, lc.selected), result);
         }
         if self.list_visiblity {
             let size = LogicalSize::new(
@@ -155,7 +155,7 @@ impl Widget for DropdownBox {
             );
             let rect = LogicalRect::from_position_size(lc.rect.left_bottom(), size);
             self.list
-                .layout(lc.next(rect, lc.layer + 1, lc.selected), result);
+                .layout(lc.next(self, rect, lc.layer + 1, lc.selected), result);
         }
     }
 }

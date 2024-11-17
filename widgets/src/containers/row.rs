@@ -54,7 +54,7 @@ impl Widget for Row {
         let size = self.size(&lc);
         let mut rect = lc.rect;
         for child in self.children.iter().take(self.children.len() - 1) {
-            let s = child.size(&lc.next(rect, lc.layer, lc.selected));
+            let s = child.size(&lc.next(self, rect, lc.layer, lc.selected));
             let h = (size.height - s.height) / 2.0;
             let r = rect.left + s.width;
             let rb = LogicalPosition::new(
@@ -63,6 +63,7 @@ impl Widget for Row {
             );
             child.layout(
                 lc.next(
+                    self,
                     LogicalRect::from_positions(LogicalPosition::new(rect.left, rect.top + h), rb),
                     lc.layer,
                     lc.selected,
@@ -72,11 +73,12 @@ impl Widget for Row {
             rect.left += s.width + self.space;
         }
         if let Some(child) = self.children.last() {
-            let s = child.size(&lc.next(rect, lc.layer, lc.selected));
+            let s = child.size(&lc.next(self, rect, lc.layer, lc.selected));
             let h = (size.height - s.height) / 2.0;
             let rb = LogicalPosition::new(lc.rect.right, rect.bottom);
             child.layout(
                 lc.next(
+                    self,
                     LogicalRect::from_positions(LogicalPosition::new(rect.left, rect.top + h), rb),
                     lc.layer,
                     lc.selected,

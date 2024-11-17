@@ -63,8 +63,8 @@ impl Widget for VerticalPanes {
             (lc.rect.left + left.size().width, lc.rect.top),
             lc.rect.right_bottom(),
         );
-        self.panes[0].layout(lc.next(left, lc.layer, lc.selected), result);
-        self.panes[1].layout(lc.next(right, lc.layer, lc.selected), result);
+        self.panes[0].layout(lc.next(self, left, lc.layer, lc.selected), result);
+        self.panes[1].layout(lc.next(self, right, lc.layer, lc.selected), result);
     }
 }
 
@@ -121,7 +121,7 @@ impl Widget for HorizontalPanes {
             (lc.rect.left, lc.rect.top + top.size().height),
             lc.rect.right_bottom(),
         );
-        self.panes[0].layout(lc.next(top, lc.layer, lc.selected), result);
-        self.panes[1].layout(lc.next(bottom, lc.layer, lc.selected), result);
+        self.panes[0].layout(lc.next(self, top, lc.layer, lc.selected), result);
+        self.panes[1].layout(lc.next(self, bottom, lc.layer, lc.selected), result);
     }
 }

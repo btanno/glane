@@ -185,10 +185,10 @@ impl Widget for ListBox {
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
-        result.push(&lc, LayoutElement::start_clipping(self, lc.rect));
+        result.push(&lc, LayoutElement::start_clipping(self, lc.rect, &lc.ancestors, lc.layer));
         result.push(
             &lc,
-            LayoutElement::area(self, self.widget_state, lc.rect, false),
+            LayoutElement::area(self, self.widget_state, lc.rect, &lc.ancestors, lc.layer, false),
         );
         let current = self.vertical_bar.borrow().current() as f32;
         let padding_rect = LogicalRect::new(
@@ -215,7 +215,7 @@ impl Widget for ListBox {
                 if selected {
                     result.push(
                         &lc,
-                        LayoutElement::area(self, WidgetState::None, rect, true),
+                        LayoutElement::area(self, WidgetState::None, rect, &lc.ancestors, lc.layer, true),
                     );
                 }
                 if first_view_element.is_none() {
@@ -223,7 +223,7 @@ impl Widget for ListBox {
                 }
                 child
                     .object
-                    .layout(lc.next(rect, lc.layer, selected), result);
+                    .layout(lc.next(self, rect, lc.layer, selected), result);
                 let d = if padding_rect.top > rect.top {
                     padding_rect.top - rect.top
                 } else if padding_rect.bottom < rect.bottom {
@@ -249,6 +249,7 @@ impl Widget for ListBox {
             let size = bar.size(&lc);
             bar.layout(
                 lc.next(
+                    self,
                     LogicalRect::new(
                         lc.rect.right - size.width - self.style.padding.right,
                         lc.rect.top + self.style.padding.top,
@@ -261,7 +262,7 @@ impl Widget for ListBox {
                 result,
             );
         }
-        result.push(&lc, LayoutElement::end_clipping(self, lc.rect));
+        result.push(&lc, LayoutElement::end_clipping(self, lc.rect, &lc.ancestors, lc.layer));
     }
 }
 

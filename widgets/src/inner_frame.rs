@@ -8,6 +8,7 @@ pub struct InnerFrame {
     vscroll: VScrollBar,
     hscroll: HScrollBar,
     children: Vec<Box<dyn Widget>>,
+    entered: bool,
 }
 
 impl InnerFrame {
@@ -23,6 +24,7 @@ impl InnerFrame {
             vscroll: VScrollBar::new(size.height.ceil() as usize, viewport.height.ceil() as usize),
             hscroll: HScrollBar::new(size.width.ceil() as usize, viewport.width.ceil() as usize),
             children: vec![],
+            entered: false,
         }
     }
 }
@@ -36,36 +38,64 @@ impl HasId for InnerFrame {
 impl Widget for InnerFrame {
     fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow {
         let area = ctx.find_layout(self).find_map(|l| l.as_area());
-        if let Some(area) = area {
+        let left = if let Some(area) = area {
             match input {
                 Input::MouseInput(ev) => {
-                    if !area.rect.contains(&ev.mouse_state.position) {
-                        return ControlFlow::Continue;
+                    if area.rect.contains(&ev.mouse_state.position) {
+                        self.entered = true;
+                        None
+                    } else if self.entered {
+                        self.entered = false;
+                        Some(Input::CursorLeft(CursorLeft {
+                            mouse_state: ev.mouse_state.clone(),
+                        }))
+                    } else {
+                        None
                     }
                 }
                 Input::CursorMoved(ev) => {
-                    if !area.rect.contains(&ev.mouse_state.position) {
-                        return ControlFlow::Continue;
+                    if area.rect.contains(&ev.mouse_state.position) {
+                        self.entered = true;
+                        None
+                    } else if self.entered {
+                        self.entered = false;
+                        Some(Input::CursorLeft(CursorLeft {
+                            mouse_state: ev.mouse_state.clone(),
+                        }))
+                    } else {
+                        None
                     }
                 }
-                _ => {}
+                _ => None,
             }
         } else {
-            return ControlFlow::Continue;
-        }
+            None
+        };
+        let layer = if let Some(area) = area { area.layer } else { 0 };
         for child in self.children.iter_mut() {
-            if ctx.find_layout(child.as_ref()).count() > 0 {
+            if let Some(i) = left.as_ref() {
+                if child.input(ctx, i, events) == ControlFlow::Break {
+                    return ControlFlow::Break;
+                }
+            } else if self.entered {
                 if child.input(ctx, input, events) == ControlFlow::Break {
                     return ControlFlow::Break;
                 }
+            } else {
+                let layered_children = ctx.layout.iter().filter(|l| {
+                    (l.handle().id() == child.id()
+                        || l.ancestors().iter().find(|a| a.id() == child.id()).is_some())
+                        && l.layer() > layer
+                });
+                if layered_children.count() > 0 {
+                    if child.input(ctx, input, events) == ControlFlow::Break {
+                        return ControlFlow::Break;
+                    }
+                }
             }
         }
-        if self.vscroll.input(ctx, input, events) == ControlFlow::Break {
-            return ControlFlow::Break;
-        }
-        if self.hscroll.input(ctx, input, events) == ControlFlow::Break {
-            return ControlFlow::Break;
-        }
+        self.vscroll.input(ctx, input, events);
+        self.hscroll.input(ctx, input, events);
         if let Some(vs) = events
             .iter()
             .rev()
@@ -109,6 +139,8 @@ impl Widget for InnerFrame {
                 self,
                 WidgetState::None,
                 LogicalRect::from_position_size(lc.rect.left_top(), self.viewport),
+                &lc.ancestors,
+                lc.layer,
                 false,
             ),
         );
@@ -117,6 +149,8 @@ impl Widget for InnerFrame {
             LayoutElement::start_clipping(
                 self,
                 LogicalRect::from_position_size(lc.rect.left_top(), self.viewport),
+                &lc.ancestors,
+                lc.layer,
             ),
         );
         let mut position = LogicalPosition::new(-self.position.x, -self.position.y);
@@ -126,6 +160,7 @@ impl Widget for InnerFrame {
             if range {
                 child.layout(
                     lc.next(
+                        self,
                         LogicalRect::from_position_size(
                             LogicalPosition::new(
                                 lc.rect.left + position.x,
@@ -149,15 +184,19 @@ impl Widget for InnerFrame {
             LayoutElement::end_clipping(
                 self,
                 LogicalRect::from_position_size(lc.rect.left_top(), self.viewport),
+                &lc.ancestors,
+                lc.layer,
             ),
         );
         let vscroll_size = self.vscroll.size(&lc.next(
+            self,
             LogicalRect::from_position_size(lc.rect.left_top(), self.viewport),
             lc.layer,
             lc.selected,
         ));
         self.vscroll.layout(
             lc.next(
+                self,
                 LogicalRect::from_position_size(
                     LogicalPosition::new(
                         lc.rect.left + self.viewport.width - vscroll_size.width,
@@ -171,6 +210,7 @@ impl Widget for InnerFrame {
             result,
         );
         let hscroll_size = self.hscroll.size(&lc.next(
+            self,
             LogicalRect::from_position_size(
                 lc.rect.left_top(),
                 LogicalSize::new(
@@ -183,6 +223,7 @@ impl Widget for InnerFrame {
         ));
         self.hscroll.layout(
             lc.next(
+                self,
                 LogicalRect::from_position_size(
                     LogicalPosition::new(
                         lc.rect.left,

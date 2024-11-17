@@ -391,7 +391,14 @@ fn main() -> anyhow::Result<()> {
     let inner_buttons = (0..28)
         .map(|i| {
             let button = glane::widgets::Button::new(format!("Button{i}"));
-            scene.push_child(&inner_frame, button)
+            let row = scene.push_child(&inner_frame, glane::widgets::Row::new());
+            let button = scene.push_child(&row, button);
+            let dropdown = glane::widgets::DropdownBox::new();
+            for j in 0..3 {
+                scene.push_child(&dropdown, glane::widgets::Text::new(format!("Dropdown{i}:{j}")));
+            }
+            scene.push_child(&row, glane::widgets::MaxSize::new(Some(256.0), None, dropdown));
+            button
         })
         .collect::<Vec<_>>();
     let mut canvas = Canvas::new(&window, &scene)?;

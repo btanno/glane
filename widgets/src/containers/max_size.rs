@@ -46,6 +46,7 @@ impl Widget for MaxSize {
         let size = self.size(&lc);
         self.child.layout(
             lc.next(
+                self,
                 LogicalRect::from_position_size(lc.rect.left_top(), size),
                 lc.layer,
                 lc.selected,

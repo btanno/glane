@@ -22,7 +22,7 @@ mod direction {
 
     #[derive(Debug)]
     pub struct Vertical;
-    
+
     impl Direction for Vertical {}
 
     #[derive(Debug)]
@@ -207,15 +207,35 @@ impl Widget for ScrollBar<direction::Vertical> {
         };
         result.push(
             &lc,
-            LayoutElement::area(self, WidgetState::None, rect, false),
+            LayoutElement::area(
+                self,
+                WidgetState::None,
+                rect,
+                &lc.ancestors,
+                lc.layer,
+                false,
+            ),
         );
         result.push(
             &lc,
-            LayoutElement::area(&self.thumb, self.thumb.widget_state, thumb_rect, false),
+            LayoutElement::area(
+                &self.thumb,
+                self.thumb.widget_state,
+                thumb_rect,
+                &lc.ancestors,
+                lc.layer,
+                false,
+            ),
         );
         result.push(
             &lc,
-            LayoutElement::collision(&self.thumb, self.thumb.widget_state, collision_rect),
+            LayoutElement::collision(
+                &self.thumb,
+                self.thumb.widget_state,
+                collision_rect,
+                &lc.ancestors,
+                lc.layer,
+            ),
         );
     }
 }
@@ -290,15 +310,35 @@ impl Widget for ScrollBar<direction::Horizontal> {
         };
         result.push(
             &lc,
-            LayoutElement::area(self, WidgetState::None, rect, false),
+            LayoutElement::area(
+                self,
+                WidgetState::None,
+                rect,
+                &lc.ancestors,
+                lc.layer,
+                false,
+            ),
         );
         result.push(
             &lc,
-            LayoutElement::area(&self.thumb, self.thumb.widget_state, thumb_rect, false),
+            LayoutElement::area(
+                &self.thumb,
+                self.thumb.widget_state,
+                thumb_rect,
+                &lc.ancestors,
+                lc.layer,
+                false,
+            ),
         );
         result.push(
             &lc,
-            LayoutElement::collision(&self.thumb, self.thumb.widget_state, collision_rect),
+            LayoutElement::collision(
+                &self.thumb,
+                self.thumb.widget_state,
+                collision_rect,
+                &lc.ancestors,
+                lc.layer,
+            ),
         );
     }
 }

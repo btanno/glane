@@ -5,6 +5,8 @@ pub struct Area {
     pub handle: AnyHandle,
     pub widget_state: WidgetState,
     pub rect: LogicalRect<f32>,
+    pub ancestors: Vec<AnyHandle>,
+    pub layer: u32,
     pub selected: bool,
 }
 
@@ -13,6 +15,8 @@ pub struct Collision {
     pub handle: AnyHandle,
     pub widget_state: WidgetState,
     pub rect: LogicalRect<f32>,
+    pub ancestors: Vec<AnyHandle>,
+    pub layer: u32,
 }
 
 #[derive(Clone, Debug)]
@@ -20,7 +24,9 @@ pub struct Text {
     pub handle: AnyHandle,
     pub widget_state: WidgetState,
     pub rect: LogicalRect<f32>,
+    pub ancestors: Vec<AnyHandle>,
     pub string: String,
+    pub layer: u32,
     pub selected: bool,
 }
 
@@ -29,8 +35,10 @@ pub struct CompositionText {
     pub handle: AnyHandle,
     pub widget_state: WidgetState,
     pub rect: LogicalRect<f32>,
+    pub ancestors: Vec<AnyHandle>,
     pub string: String,
     pub targeted: bool,
+    pub layer: u32,
 }
 
 #[derive(Clone, Debug)]
@@ -38,13 +46,17 @@ pub struct Cursor {
     pub handle: AnyHandle,
     pub widget_state: WidgetState,
     pub rect: LogicalRect<f32>,
+    pub ancestors: Vec<AnyHandle>,
     pub c: Option<char>,
+    pub layer: u32,
 }
 
 #[derive(Clone, Debug)]
 pub struct Clipping {
     pub handle: AnyHandle,
     pub rect: LogicalRect<f32>,
+    pub ancestors: Vec<AnyHandle>,
+    pub layer: u32,
 }
 
 #[derive(Clone, Debug)]
@@ -65,12 +77,16 @@ impl LayoutElement {
         widget: &impl Widget,
         widget_state: WidgetState,
         rect: LogicalRect<f32>,
+        ancestors: &[AnyHandle],
+        layer: u32,
         selected: bool,
     ) -> Self {
         Self::Area(Area {
             handle: AnyHandle::new(widget),
             widget_state,
             rect,
+            ancestors: ancestors.to_vec(),
+            layer,
             selected,
         })
     }
@@ -80,11 +96,15 @@ impl LayoutElement {
         widget: &impl Widget,
         widget_state: WidgetState,
         rect: LogicalRect<f32>,
+        ancestors: &[AnyHandle],
+        layer: u32,
     ) -> Self {
         Self::Collision(Collision {
             handle: AnyHandle::new(widget),
             widget_state,
             rect,
+            ancestors: ancestors.to_vec(),
+            layer,
         })
     }
 
@@ -93,14 +113,18 @@ impl LayoutElement {
         widget: &impl Widget,
         widget_state: WidgetState,
         rect: LogicalRect<f32>,
+        ancestors: &[AnyHandle],
         string: String,
+        layer: u32,
         selected: bool,
     ) -> Self {
         Self::Text(Text {
             handle: AnyHandle::new(widget),
             widget_state,
             rect,
+            ancestors: ancestors.to_vec(),
             string,
+            layer,
             selected,
         })
     }
@@ -110,15 +134,19 @@ impl LayoutElement {
         widget: &impl Widget,
         widget_state: WidgetState,
         rect: LogicalRect<f32>,
+        ancestors: &[AnyHandle],
         string: String,
         targeted: bool,
+        layer: u32,
     ) -> Self {
         Self::CompositionText(CompositionText {
             handle: AnyHandle::new(widget),
             widget_state,
             rect,
+            ancestors: ancestors.to_vec(),
             string,
             targeted,
+            layer,
         })
     }
 
@@ -127,29 +155,47 @@ impl LayoutElement {
         widget: &impl Widget,
         widget_state: WidgetState,
         rect: LogicalRect<f32>,
+        ancestors: &[AnyHandle],
         c: Option<char>,
+        layer: u32,
     ) -> Self {
         Self::Cursor(Cursor {
             handle: AnyHandle::new(widget),
             widget_state,
             rect,
+            ancestors: ancestors.to_vec(),
             c,
+            layer,
         })
     }
 
     #[inline]
-    pub fn start_clipping(widget: &impl Widget, rect: LogicalRect<f32>) -> Self {
+    pub fn start_clipping(
+        widget: &impl Widget,
+        rect: LogicalRect<f32>,
+        ancestors: &[AnyHandle],
+        layer: u32,
+    ) -> Self {
         Self::StartClipping(Clipping {
             handle: AnyHandle::new(widget),
             rect,
+            ancestors: ancestors.to_vec(),
+            layer,
         })
     }
 
     #[inline]
-    pub fn end_clipping(widget: &impl Widget, rect: LogicalRect<f32>) -> Self {
+    pub fn end_clipping(
+        widget: &impl Widget,
+        rect: LogicalRect<f32>,
+        ancestors: &[AnyHandle],
+        layer: u32,
+    ) -> Self {
         Self::EndClipping(Clipping {
             handle: AnyHandle::new(widget),
             rect,
+            ancestors: ancestors.to_vec(),
+            layer,
         })
     }
 
@@ -180,6 +226,32 @@ impl LayoutElement {
     }
 
     #[inline]
+    pub fn ancestors(&self) -> &[AnyHandle] {
+        match self {
+            Self::Area(a) => &a.ancestors,
+            Self::Collision(c) => &c.ancestors,
+            Self::Text(t) => &t.ancestors,
+            Self::CompositionText(t) => &t.ancestors,
+            Self::Cursor(c) => &c.ancestors,
+            Self::StartClipping(c) => &c.ancestors,
+            Self::EndClipping(c) => &c.ancestors,
+        }
+    }
+
+    #[inline]
+    pub fn layer(&self) -> u32 {
+        match self {
+            Self::Area(a) => a.layer,
+            Self::Collision(c) => c.layer,
+            Self::Text(t) => t.layer,
+            Self::CompositionText(t) => t.layer,
+            Self::Cursor(c) => c.layer,
+            Self::StartClipping(c) => c.layer,
+            Self::EndClipping(c) => c.layer,
+        }
+    }
+
+    #[inline]
     pub fn as_area(&self) -> Option<&Area> {
         match self {
             Self::Area(v) => Some(v),
@@ -194,7 +266,7 @@ impl LayoutElement {
             _ => None,
         }
     }
-    
+
     #[inline]
     pub fn as_text(&self) -> Option<&Text> {
         match self {
@@ -218,7 +290,7 @@ impl LayoutElement {
             _ => None,
         }
     }
-    
+
     #[inline]
     pub fn as_start_clipping(&self) -> Option<&Clipping> {
         match self {
@@ -240,6 +312,7 @@ impl LayoutElement {
 pub struct LayoutContext<'a> {
     pub ctx: &'a Context,
     pub rect: LogicalRect<f32>,
+    pub ancestors: Vec<AnyHandle>,
     pub layer: u32,
     pub selected: bool,
 }
@@ -249,31 +322,35 @@ impl<'a> LayoutContext<'a> {
         Self {
             ctx,
             rect: LogicalRect::from_position_size(LogicalPosition::new(0.0, 0.0), ctx.viewport),
+            ancestors: vec![],
             layer: 0,
             selected: false,
         }
     }
 
     #[inline]
-    pub fn next(&self, rect: LogicalRect<f32>, layer: u32, selected: bool) -> Self {
+    pub fn next(
+        &self,
+        widget: &impl Widget,
+        rect: LogicalRect<f32>,
+        layer: u32,
+        selected: bool,
+    ) -> Self {
+        let mut ancestors = self.ancestors.clone();
+        ancestors.push(AnyHandle::new(widget));
         Self {
             ctx: self.ctx,
             rect,
+            ancestors,
             layer,
             selected,
         }
     }
 }
 
-#[derive(Clone, Debug)]
-pub(crate) struct Element {
-    element: LayoutElement,
-    layer: u32,
-}
-
 #[derive(Debug, Default)]
 pub struct LayoutConstructor {
-    v: Vec<Element>,
+    v: Vec<LayoutElement>,
 }
 
 impl LayoutConstructor {
@@ -283,11 +360,8 @@ impl LayoutConstructor {
     }
 
     #[inline]
-    pub fn push(&mut self, ctx: &LayoutContext, element: LayoutElement) {
-        self.v.push(Element {
-            element,
-            layer: ctx.layer,
-        });
+    pub fn push(&mut self, _ctx: &LayoutContext, element: LayoutElement) {
+        self.v.push(element);
     }
 
     #[inline]
@@ -296,21 +370,21 @@ impl LayoutConstructor {
     }
 
     #[inline]
-    pub fn retain<F>(&mut self, mut f: F)
+    pub fn retain<F>(&mut self, f: F)
     where
         F: FnMut(&LayoutElement) -> bool,
     {
-        self.v.retain(|a| f(&a.element));
+        self.v.retain(f);
     }
 
     #[inline]
     pub fn iter(&self) -> impl Iterator<Item = &LayoutElement> {
-        self.v.iter().map(|elem| &elem.element)
+        self.v.iter()
     }
 
     #[inline]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut LayoutElement> {
-        self.v.iter_mut().map(|elem| &mut elem.element)
+        self.v.iter_mut()
     }
 
     #[inline]
@@ -318,7 +392,7 @@ impl LayoutConstructor {
         let mut result = None;
         let mut end_count = 0;
         for elem in self.v.iter().rev() {
-            match &elem.element {
+            match &elem {
                 LayoutElement::StartClipping(ev) => {
                     if end_count == 0 {
                         result = Some(ev.rect);
@@ -342,7 +416,7 @@ impl LayoutConstructor {
 
 #[derive(Clone, Debug)]
 pub struct Layout {
-    v: Vec<Element>,
+    v: Vec<LayoutElement>,
 }
 
 impl Layout {
@@ -351,13 +425,13 @@ impl Layout {
     }
 
     pub(crate) fn new(_ctx: &Context, mut c: LayoutConstructor) -> Self {
-        c.v.sort_by(|a, b| a.layer.cmp(&b.layer));
+        c.v.sort_by(|a, b| a.layer().cmp(&b.layer()));
         Self { v: c.v }
     }
 
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = &LayoutElement> {
-        self.v.iter().map(|elem| &elem.element)
+    pub fn iter(&self) -> impl ExactSizeIterator<Item = &LayoutElement> {
+        self.v.iter()
     }
 
     #[inline]

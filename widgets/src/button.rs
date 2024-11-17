@@ -64,6 +64,12 @@ impl Widget for Button {
                     self.widget_state = events.push_state_changed(self, state, self.widget_state);
                 }
             }
+            Input::CursorLeft(m) => {
+                let state = WidgetState::current(layout.rect(), &m.mouse_state);
+                if state != self.widget_state {
+                    self.widget_state = events.push_state_changed(self, state, self.widget_state);
+                }
+            }
             _ => {}
         }
         ControlFlow::Continue
@@ -91,7 +97,14 @@ impl Widget for Button {
         let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
         result.push(
             &lc,
-            LayoutElement::area(self, self.widget_state, rect, false),
+            LayoutElement::area(
+                self,
+                self.widget_state,
+                rect,
+                &lc.ancestors,
+                lc.layer,
+                false,
+            ),
         );
         let rect = LogicalRect::new(
             rect.left + self.style.padding.left,
@@ -101,7 +114,15 @@ impl Widget for Button {
         );
         result.push(
             &lc,
-            LayoutElement::text(self, self.widget_state, rect, self.text.clone(), false),
+            LayoutElement::text(
+                self,
+                self.widget_state,
+                rect,
+                &lc.ancestors,
+                self.text.clone(),
+                lc.layer,
+                false,
+            ),
         );
     }
 }

@@ -19,6 +19,11 @@ pub struct CursorMoved {
 }
 
 #[derive(Clone, Debug)]
+pub struct CursorLeft {
+    pub mouse_state: MouseState,
+}
+
+#[derive(Clone, Debug)]
 pub struct MouseWheel {
     pub axis: MouseWheelAxis,
     pub distance: i32,
@@ -49,6 +54,7 @@ pub struct Composition {
 pub enum Input {
     MouseInput(MouseInput),
     CursorMoved(CursorMoved),
+    CursorLeft(CursorLeft),
     MouseWheel(MouseWheel),
     KeyInput(KeyInput),
     CharInput(char),

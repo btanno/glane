@@ -151,13 +151,14 @@ impl Scene {
     }
 
     #[inline]
-    pub fn push_child<T, U>(&mut self, parent: &Handle<T>, child: U) -> Handle<U>
+    pub fn push_child<T, U>(&mut self, parent: impl Into<Handle<T>>, child: U) -> Handle<U>
     where
         T: Widget + HasChildren,
         U: Widget,
     {
+        let parent = parent.into();
         let handle = Handle::new(&child);
-        self.apply(parent, move |r| r.push(child));
+        self.apply(&parent, move |r| r.push(child));
         handle
     }
 

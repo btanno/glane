@@ -166,10 +166,7 @@ impl Widget for TextBox {
             min_width
         };
         let height = t.size().height + self.style.padding.top + self.style.padding.bottom;
-        LogicalSize::new(
-            width,
-            height,
-        )
+        LogicalSize::new(width, height)
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
@@ -181,10 +178,20 @@ impl Widget for TextBox {
             .unwrap_or_else(|| lc.ctx.default_font.as_ref().unwrap());
         let mut rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
         let clipping_rect = rect;
-        result.push(&lc, LayoutElement::start_clipping(self, clipping_rect));
         result.push(
             &lc,
-            LayoutElement::area(self, self.widget_state, clipping_rect, false),
+            LayoutElement::start_clipping(self, clipping_rect, &lc.ancestors, lc.layer),
+        );
+        result.push(
+            &lc,
+            LayoutElement::area(
+                self,
+                self.widget_state,
+                clipping_rect,
+                &lc.ancestors,
+                lc.layer,
+                false,
+            ),
         );
         rect.left += self.style.padding.left;
         rect.top += self.style.padding.top;
@@ -196,7 +203,15 @@ impl Widget for TextBox {
         if !self.front_text.is_empty() {
             result.push(
                 &lc,
-                LayoutElement::text(self, self.widget_state, rect, front_text, lc.selected),
+                LayoutElement::text(
+                    self,
+                    self.widget_state,
+                    rect,
+                    &lc.ancestors,
+                    front_text,
+                    lc.layer,
+                    lc.selected,
+                ),
             );
         }
         if lc.ctx.has_focus(self) {
@@ -223,8 +238,10 @@ impl Widget for TextBox {
                             self,
                             self.widget_state,
                             rect,
+                            &lc.ancestors,
                             text,
                             clause.targeted,
+                            lc.layer,
                         ),
                     );
                 }
@@ -256,7 +273,9 @@ impl Widget for TextBox {
                         self,
                         self.widget_state,
                         cursor_rect,
+                        &lc.ancestors,
                         self.back_text.last().cloned(),
+                        lc.layer,
                     ),
                 );
             } else {
@@ -270,7 +289,9 @@ impl Widget for TextBox {
                         self,
                         self.widget_state,
                         cursor_rect,
+                        &lc.ancestors,
                         self.back_text.last().cloned(),
+                        lc.layer,
                     ),
                 );
             }
@@ -287,10 +308,21 @@ impl Widget for TextBox {
             );
             result.push(
                 &lc,
-                LayoutElement::text(self, self.widget_state, rect, back_text, lc.selected),
+                LayoutElement::text(
+                    self,
+                    self.widget_state,
+                    rect,
+                    &lc.ancestors,
+                    back_text,
+                    lc.layer,
+                    lc.selected,
+                ),
             );
         }
-        result.push(&lc, LayoutElement::end_clipping(self, clipping_rect));
+        result.push(
+            &lc,
+            LayoutElement::end_clipping(self, clipping_rect, &lc.ancestors, lc.layer),
+        );
     }
 }
 

@@ -130,11 +130,25 @@ impl Widget for Slider {
         );
         result.push(
             &lc,
-            LayoutElement::area(self, WidgetState::None, rect, false),
+            LayoutElement::area(
+                self,
+                WidgetState::None,
+                rect,
+                &lc.ancestors,
+                lc.layer,
+                false,
+            ),
         );
         result.push(
             &lc,
-            LayoutElement::area(&self.knob, self.widget_state, knob_rect, false),
+            LayoutElement::area(
+                &self.knob,
+                self.widget_state,
+                knob_rect,
+                &lc.ancestors,
+                lc.layer,
+                false,
+            ),
         );
     }
 }
