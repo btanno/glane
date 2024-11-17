@@ -54,6 +54,24 @@ fn create_scene() -> glane::Scene {
     for c in 'a'..='z' {
         scene.push_child(&list_box, glane::widgets::Text::new(c.to_string()));
     }
+    let inner_frame = scene.push_child(
+        &right,
+        glane::widgets::InnerFrame::new(
+            glane::LogicalSize::new(500.0, 256.0),
+            glane::LogicalSize::new(1920.0, 1024.0),
+        ),
+    );
+    (0..28)
+        .for_each(|i| {
+            let button = glane::widgets::Button::new(format!("Button{i}"));
+            let row = scene.push_child(&inner_frame, glane::widgets::Row::new());
+            scene.push_child(&row, button);
+            let dropdown = glane::widgets::DropdownBox::new();
+            for j in 0..3 {
+                scene.push_child(&dropdown, glane::widgets::Text::new(format!("Dropdown{i}:{j}")));
+            }
+            scene.push_child(&row, glane::widgets::MaxSize::new(Some(256.0), None, dropdown));
+        });
     scene
 }
 
