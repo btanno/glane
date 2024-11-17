@@ -39,9 +39,10 @@ impl Widget for InnerFrame {
     fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow {
         let area = ctx.find_layout(self).find_map(|l| l.as_area());
         let left = if let Some(area) = area {
+            let rc = LogicalRect::from_position_size(area.rect.left_top(), self.viewport);
             match input {
                 Input::MouseInput(ev) => {
-                    if area.rect.contains(&ev.mouse_state.position) {
+                    if rc.contains(&ev.mouse_state.position) {
                         self.entered = true;
                         None
                     } else if self.entered {
@@ -54,7 +55,7 @@ impl Widget for InnerFrame {
                     }
                 }
                 Input::CursorMoved(ev) => {
-                    if area.rect.contains(&ev.mouse_state.position) {
+                    if rc.contains(&ev.mouse_state.position) {
                         self.entered = true;
                         None
                     } else if self.entered {
