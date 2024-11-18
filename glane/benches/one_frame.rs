@@ -15,14 +15,12 @@ fn create_scene() -> glane::Scene {
     scene.push_child(&row_text_box, glane::widgets::TextBox::new());
     let row_scroll_bar = scene.push_child(&left, glane::widgets::Row::new());
     scene.push_child(&row_scroll_bar, glane::widgets::Label::new("ScrollBar"));
-    let scroll_bar =
-        glane::widgets::VScrollBar::new(100, 10);
+    let scroll_bar = glane::widgets::VScrollBar::new(100, 10);
     scene.push_child(
         &row_scroll_bar,
         glane::widgets::MaxSize::new(None, Some(200.0), scroll_bar),
     );
-    let scroll_bar =
-        glane::widgets::VScrollBar::new(1000, 10);
+    let scroll_bar = glane::widgets::VScrollBar::new(1000, 10);
     scene.push_child(
         &row_scroll_bar,
         glane::widgets::MaxSize::new(None, Some(200.0), scroll_bar),
@@ -61,17 +59,22 @@ fn create_scene() -> glane::Scene {
             glane::LogicalSize::new(1920.0, 1024.0),
         ),
     );
-    (0..28)
-        .for_each(|i| {
-            let button = glane::widgets::Button::new(format!("Button{i}"));
-            let row = scene.push_child(&inner_frame, glane::widgets::Row::new());
-            scene.push_child(&row, button);
-            let dropdown = glane::widgets::DropdownBox::new();
-            for j in 0..3 {
-                scene.push_child(&dropdown, glane::widgets::Text::new(format!("Dropdown{i}:{j}")));
-            }
-            scene.push_child(&row, glane::widgets::MaxSize::new(Some(256.0), None, dropdown));
-        });
+    (0..28).for_each(|i| {
+        let button = glane::widgets::Button::new(format!("Button{i}"));
+        let row = scene.push_child(&inner_frame, glane::widgets::Row::new());
+        scene.push_child(&row, button);
+        let dropdown = glane::widgets::DropdownBox::new();
+        for j in 0..3 {
+            scene.push_child(
+                &dropdown,
+                glane::widgets::Text::new(format!("Dropdown{i}:{j}")),
+            );
+        }
+        scene.push_child(
+            &row,
+            glane::widgets::MaxSize::new(Some(256.0), None, dropdown),
+        );
+    });
     scene
 }
 

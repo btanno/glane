@@ -70,7 +70,7 @@ where
 
 impl<T> From<&T> for Handle<T>
 where
-    T: Widget
+    T: Widget,
 {
     fn from(value: &T) -> Self {
         Self::new(value)
@@ -79,7 +79,7 @@ where
 
 impl<T> From<&Handle<T>> for Handle<T>
 where
-    T: Widget
+    T: Widget,
 {
     fn from(value: &Handle<T>) -> Self {
         value.clone()

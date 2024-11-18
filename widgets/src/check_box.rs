@@ -160,12 +160,26 @@ impl Widget for CheckBox {
         );
         result.push(
             &lc,
-            LayoutElement::area(self, self.widget_state, rect, &lc.ancestors, lc.layer, false),
+            LayoutElement::area(
+                self,
+                self.widget_state,
+                rect,
+                &lc.ancestors,
+                lc.layer,
+                false,
+            ),
         );
         if self.checked {
             result.push(
                 &lc,
-                LayoutElement::area(&self.check, self.widget_state, rect, &lc.ancestors, lc.layer, false),
+                LayoutElement::area(
+                    &self.check,
+                    self.widget_state,
+                    rect,
+                    &lc.ancestors,
+                    lc.layer,
+                    false,
+                ),
             );
         }
         let rect = LogicalRect::new(
@@ -174,7 +188,8 @@ impl Widget for CheckBox {
             rect.right + self.style.spacing + text_size.width,
             rect.bottom,
         );
-        self.label.layout(lc.next(self, rect, lc.layer, false), result);
+        self.label
+            .layout(lc.next(self, rect, lc.layer, false), result);
     }
 }
 

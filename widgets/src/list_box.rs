@@ -185,10 +185,20 @@ impl Widget for ListBox {
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
-        result.push(&lc, LayoutElement::start_clipping(self, lc.rect, &lc.ancestors, lc.layer));
         result.push(
             &lc,
-            LayoutElement::area(self, self.widget_state, lc.rect, &lc.ancestors, lc.layer, false),
+            LayoutElement::start_clipping(self, lc.rect, &lc.ancestors, lc.layer),
+        );
+        result.push(
+            &lc,
+            LayoutElement::area(
+                self,
+                self.widget_state,
+                lc.rect,
+                &lc.ancestors,
+                lc.layer,
+                false,
+            ),
         );
         let current = self.vertical_bar.borrow().current() as f32;
         let padding_rect = LogicalRect::new(
@@ -215,7 +225,14 @@ impl Widget for ListBox {
                 if selected {
                     result.push(
                         &lc,
-                        LayoutElement::area(self, WidgetState::None, rect, &lc.ancestors, lc.layer, true),
+                        LayoutElement::area(
+                            self,
+                            WidgetState::None,
+                            rect,
+                            &lc.ancestors,
+                            lc.layer,
+                            true,
+                        ),
                     );
                 }
                 if first_view_element.is_none() {
@@ -262,7 +279,10 @@ impl Widget for ListBox {
                 result,
             );
         }
-        result.push(&lc, LayoutElement::end_clipping(self, lc.rect, &lc.ancestors, lc.layer));
+        result.push(
+            &lc,
+            LayoutElement::end_clipping(self, lc.rect, &lc.ancestors, lc.layer),
+        );
     }
 }
 

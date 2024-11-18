@@ -17,13 +17,13 @@ pub use check_box::CheckBox;
 pub use containers::*;
 pub use dropdown_box::DropdownBox;
 pub use empty::Empty;
+pub use inner_frame::InnerFrame;
 pub use label::Label;
 pub use list_box::ListBox;
 pub use pane::{HorizontalPanes, VerticalPanes};
-pub use scroll_bar::{VScrollBar, HScrollBar};
+pub use scroll_bar::{HScrollBar, VScrollBar};
 pub use slider::Slider;
 pub use text::Text;
 pub use text_box::TextBox;
-pub use inner_frame::InnerFrame;
 
 use glane_core::*;

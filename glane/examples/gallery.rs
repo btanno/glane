@@ -395,9 +395,15 @@ fn main() -> anyhow::Result<()> {
             let button = scene.push_child(&row, button);
             let dropdown = glane::widgets::DropdownBox::new();
             for j in 0..3 {
-                scene.push_child(&dropdown, glane::widgets::Text::new(format!("Dropdown{i}:{j}")));
+                scene.push_child(
+                    &dropdown,
+                    glane::widgets::Text::new(format!("Dropdown{i}:{j}")),
+                );
             }
-            scene.push_child(&row, glane::widgets::MaxSize::new(Some(256.0), None, dropdown));
+            scene.push_child(
+                &row,
+                glane::widgets::MaxSize::new(Some(256.0), None, dropdown),
+            );
             button
         })
         .collect::<Vec<_>>();

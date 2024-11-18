@@ -139,7 +139,14 @@ impl Widget for DropdownBox {
         let mut rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
         result.push(
             &lc,
-            LayoutElement::area(self, self.widget_state, rect, &lc.ancestors, lc.layer, false),
+            LayoutElement::area(
+                self,
+                self.widget_state,
+                rect,
+                &lc.ancestors,
+                lc.layer,
+                false,
+            ),
         );
         rect.left += self.padding.left;
         rect.top += self.padding.top;

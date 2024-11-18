@@ -286,6 +286,7 @@ impl Widget for ScrollBar<direction::Horizontal> {
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
         LogicalSize::new(ctx.rect.right - ctx.rect.left, self.style.width)
     }
+
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
         let thumb_size = LogicalSize::new(

@@ -212,10 +212,7 @@ impl Widget for InnerFrame {
             self,
             LogicalRect::from_position_size(
                 lc.rect.left_top(),
-                LogicalSize::new(
-                    self.viewport.width,
-                    self.viewport.height,
-                ),
+                LogicalSize::new(self.viewport.width, self.viewport.height),
             ),
             lc.layer,
             lc.selected,
@@ -236,10 +233,7 @@ impl Widget for InnerFrame {
             lc.next(
                 self,
                 LogicalRect::from_position_size(
-                    LogicalPosition::new(
-                        lc.rect.left + self.viewport.width,
-                        lc.rect.top,
-                    ),
+                    LogicalPosition::new(lc.rect.left + self.viewport.width, lc.rect.top),
                     vscroll_size,
                 ),
                 lc.layer,
