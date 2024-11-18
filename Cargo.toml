@@ -9,6 +9,10 @@ license = "MIT"
 description = "GUI layout library"
 repository = "https://github.com/btanno/glane"
 
+[workspace.dependencies]
+num = "0.4"
+rustybuzz = "0.20"
+
 [profile.release-debug]
 inherits = "release"
 debug = 1
