@@ -11,10 +11,11 @@ glane-core = { path = "../core" }
 glane-widgets = { path = "../widgets" }
 
 [dev-dependencies]
-anyhow = "1.0.79"
-pnte = "0.1.0"
-wiard = "0.1.2"
-windows = { version = "0.52.0", features = [
-    "Win32_Foundation",
-    "Win32_System_Com",
-] }
+anyhow = "1.0"
+divan = "0.1"
+pnte = "0.2"
+wiard = "0.3"
+
+[[bench]]
+name = "one_frame"
+harness = false

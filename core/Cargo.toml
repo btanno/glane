@@ -7,6 +7,8 @@ description.workspace = true
 repository.workspace = true
 
 [dependencies]
-gdueiv = { version = "0.1.3", features = ["serde"] }
-num = "0.4.1"
-rustybuzz = "0.12.1"
+gedv = { version = "0.2", features = ["serde"] }
+num = "0.4"
+rustybuzz = "0.12"
+sys-locale = "0.3"
+ttf-parser = "0.20"

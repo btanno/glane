@@ -5,22 +5,31 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct Context {
     pub viewport: LogicalSize<f32>,
-    pub focus: Option<AnyHandle>,
     pub layout: Arc<Layout>,
     pub default_font: Option<Font>,
+    pub prev_input: Option<Input>,
+    focus: Option<AnyHandle>,
+    pub(crate) bounding_box_cache: Arc<BoundingBoxCache>,
 }
 
 impl Context {
     #[inline]
     pub fn find_layout<'a>(
         &'a self,
-        widget: &impl Widget,
-    ) -> impl Iterator<Item = &'a LayoutElement> + 'a {
+        widget: &dyn Widget,
+    ) -> impl Iterator<Item = &'a LayoutElement> {
         let id = widget.id();
-        self.layout.iter().filter(move |l| l.handle.id() == id)
+        self.layout.iter().filter(move |l| l.handle().id() == id)
+    }
+
+    #[inline]
+    pub fn has_focus<T: Widget>(&self, widget: &T) -> bool {
+        self.focus
+            .map_or(false, |focus| focus == Handle::new(widget))
     }
 }
 
+#[allow(clippy::type_complexity)]
 struct ApplyElement {
     handle: AnyHandle,
     f: Option<Box<dyn FnOnce(&mut dyn Any)>>,
@@ -29,7 +38,7 @@ struct ApplyElement {
 pub struct ApplyFuncs(Vec<ApplyElement>);
 
 impl ApplyFuncs {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self(vec![])
     }
 
@@ -70,20 +79,27 @@ pub struct Scene {
 
 impl Scene {
     #[inline]
-    pub fn new(root: impl Widget) -> Self {
-        Self {
-            ctx: Context {
-                viewport: LogicalSize::new(1024.0, 768.0),
-                focus: None,
-                layout: Arc::new(Layout::empty()),
-                default_font: FontFace::from_os_default()
-                    .ok()
-                    .map(|face| Font::new(&face, 14.0)),
+    pub fn new<T: Widget>(root: T) -> (Self, Handle<T>) {
+        let root = Box::new(root);
+        let handle = Handle::new(root.as_ref());
+        (
+            Self {
+                ctx: Context {
+                    viewport: LogicalSize::new(1024.0, 768.0),
+                    focus: None,
+                    layout: Arc::new(Layout::empty()),
+                    default_font: FontFace::from_os_default()
+                        .ok()
+                        .map(|face| Font::new(&face, 14.0)),
+                    prev_input: None,
+                    bounding_box_cache: BoundingBoxCache::new(256),
+                },
+                root,
+                prev_input: None,
+                apply_funcs: ApplyFuncs::new(),
             },
-            root: Box::new(root),
-            prev_input: None,
-            apply_funcs: ApplyFuncs::new(),
-        }
+            handle,
+        )
     }
 
     #[inline]
@@ -96,15 +112,22 @@ impl Scene {
         self.ctx.default_font.as_ref()
     }
 
-    pub fn input(&mut self, input: Input) -> Vec<Event> {
+    pub fn input(&mut self, input: Input, events: &mut Events) {
         if !self.apply_funcs.0.is_empty() {
             self.root.apply(&mut self.apply_funcs);
             self.apply_funcs.0.clear();
         }
-        let mut events = vec![];
-        self.root.input(&self.ctx, &input, &mut events);
+        self.ctx.prev_input = self.prev_input.take();
+        self.root.input(&self.ctx, &input, events);
+        if let Input::MouseInput(m) = &input {
+            if m.button_state == ButtonState::Pressed {
+                self.ctx.focus = events
+                    .iter()
+                    .find(|event| event.is_set_focus())
+                    .map(|event| event.handle());
+            }
+        }
         self.prev_input = Some(input);
-        events
     }
 
     #[inline]
@@ -125,5 +148,26 @@ impl Scene {
         self.root.layout(LayoutContext::new(&self.ctx), &mut layout);
         self.ctx.layout = Arc::new(Layout::new(&self.ctx, layout));
         self.ctx.layout.clone()
+    }
+
+    #[inline]
+    pub fn push_child<T, U>(&mut self, parent: impl Into<Handle<T>>, child: U) -> Handle<U>
+    where
+        T: Widget + HasChildren,
+        U: Widget,
+    {
+        let parent = parent.into();
+        let handle = Handle::new(&child);
+        self.apply(&parent, move |r| r.push(child));
+        handle
+    }
+
+    #[inline]
+    pub fn erase_child<T, U>(&mut self, parent: &Handle<T>, child: Handle<U>)
+    where
+        T: Widget + HasChildren,
+        U: Widget,
+    {
+        self.apply(parent, move |r| r.erase(&child));
     }
 }

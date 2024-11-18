@@ -4,9 +4,20 @@ use std::sync::atomic::{self, AtomicU64};
 pub struct Id(u64);
 
 impl Id {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         static NEXT_ID: AtomicU64 = AtomicU64::new(1);
         Self(NEXT_ID.fetch_add(1, atomic::Ordering::SeqCst))
     }
 }
 
+pub trait HasId {
+    fn id(&self) -> Id;
+}
+
+impl HasId for Id {
+    #[inline]
+    fn id(&self) -> Id {
+        *self
+    }
+}

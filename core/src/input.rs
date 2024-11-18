@@ -19,6 +19,11 @@ pub struct CursorMoved {
 }
 
 #[derive(Clone, Debug)]
+pub struct CursorLeft {
+    pub mouse_state: MouseState,
+}
+
+#[derive(Clone, Debug)]
 pub struct MouseWheel {
     pub axis: MouseWheelAxis,
     pub distance: i32,
@@ -32,8 +37,28 @@ pub struct KeyInput {
 }
 
 #[derive(Clone, Debug)]
+pub struct Clause {
+    pub range: std::ops::Range<usize>,
+    pub targeted: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct Composition {
+    pub chars: Vec<char>,
+    pub clauses: Vec<Clause>,
+    pub cursor_position: usize,
+}
+
+#[derive(Clone, Debug)]
+#[non_exhaustive]
 pub enum Input {
     MouseInput(MouseInput),
     CursorMoved(CursorMoved),
+    CursorLeft(CursorLeft),
+    MouseWheel(MouseWheel),
     KeyInput(KeyInput),
+    CharInput(char),
+    ImeBeginComposition,
+    ImeUpdateComposition(Composition),
+    ImeEndComposition(Option<String>),
 }

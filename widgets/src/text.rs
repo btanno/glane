@@ -2,34 +2,34 @@ use super::*;
 
 #[derive(Default, Debug)]
 pub struct Style {
-    pub font: Option<Font>,
+    font: Option<Font>,
 }
 
 #[derive(Debug)]
-pub struct Label {
+pub struct Text {
     id: Id,
+    style: Style,
     pub text: String,
-    pub style: Style,
 }
 
-impl Label {
+impl Text {
+    #[inline]
     pub fn new(text: impl Into<String>) -> Self {
         Self {
             id: Id::new(),
-            text: text.into(),
             style: Default::default(),
+            text: text.into(),
         }
     }
 }
 
-impl HasId for Label {
-    #[inline]
+impl HasId for Text {
     fn id(&self) -> Id {
         self.id
     }
 }
 
-impl Widget for Label {
+impl Widget for Text {
     fn input(&mut self, _ctx: &Context, _input: &Input, _events: &mut Events) -> ControlFlow {
         ControlFlow::Continue
     }
@@ -38,13 +38,13 @@ impl Widget for Label {
         funcs.apply(self);
     }
 
-    fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
+    fn size(&self, lc: &LayoutContext) -> LogicalSize<f32> {
         let font = self
             .style
             .font
             .as_ref()
-            .unwrap_or_else(|| ctx.ctx.default_font.as_ref().unwrap());
-        let shape = bounding_box_with_str(ctx.ctx, font, &self.text);
+            .unwrap_or_else(|| lc.ctx.default_font.as_ref().unwrap());
+        let shape = bounding_box_with_str(lc.ctx, font, &self.text);
         LogicalSize::new(shape.right - shape.left, shape.bottom - shape.top)
     }
 

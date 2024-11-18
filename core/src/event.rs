@@ -14,6 +14,9 @@ impl StateChanged {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct SetFocus;
+
 pub struct Event {
     handle: AnyHandle,
     object: Box<dyn Any>,
@@ -38,25 +41,32 @@ impl Event {
     }
 
     #[inline]
-    pub fn message<T>(&self, handle: &Handle<T>) -> Option<&T::Message>
+    pub fn message<T>(&self, handle: impl Into<Handle<T>>) -> Option<&T::Message>
     where
         T: WidgetMessage,
     {
-        if handle != &self.handle {
+        let handle = handle.into();
+        if handle != self.handle {
             return None;
         }
         self.object.downcast_ref::<T::Message>()
     }
 
     #[inline]
-    pub fn state_changed<T>(&self, handle: &Handle<T>) -> Option<&StateChanged>
+    pub fn state_changed<T>(&self, handle: impl Into<Handle<T>>) -> Option<&StateChanged>
     where
         T: Widget,
     {
-        if handle != &self.handle {
+        let handle = handle.into();
+        if handle != self.handle {
             return None;
         }
         self.object.downcast_ref::<StateChanged>()
+    }
+
+    #[inline]
+    pub fn is_set_focus(&self) -> bool {
+        self.object.downcast_ref::<SetFocus>().is_some()
     }
 
     #[inline]
@@ -69,8 +79,86 @@ impl Event {
 }
 
 #[inline]
-pub fn state_changed_exists(v: &Vec<Event>) -> bool {
+pub fn state_changed_exists(v: &[Event]) -> bool {
     v.iter()
         .find_map(|ev| ev.downcast_ref::<StateChanged>())
         .is_some()
+}
+
+pub struct Events(Vec<Event>);
+
+impl Events {
+    #[inline]
+    pub fn new() -> Self {
+        Self(vec![])
+    }
+
+    #[inline]
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    #[inline]
+    pub fn push(&mut self, widget: &impl Widget, object: impl Any) {
+        self.0.push(Event::new(widget, object))
+    }
+
+    #[inline]
+    pub fn push_message<T>(&mut self, widget: &T, message: T::Message)
+    where
+        T: WidgetMessage,
+    {
+        self.0.push(Event::new(widget, message));
+    }
+
+    #[inline]
+    pub fn push_state_changed(
+        &mut self,
+        widget: &impl Widget,
+        current: WidgetState,
+        prev: WidgetState,
+    ) -> WidgetState {
+        if current != prev {
+            self.0
+                .push(Event::new(widget, StateChanged::new(current, prev)));
+        }
+        current
+    }
+
+    #[inline]
+    pub fn pop(&mut self) -> Option<Event> {
+        self.0.pop()
+    }
+
+    #[inline]
+    pub fn remove(&mut self, index: usize) -> Event {
+        self.0.remove(index)
+    }
+
+    #[inline]
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &Event> {
+        self.0.iter()
+    }
+
+    #[inline]
+    pub fn iter_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Event> {
+        self.0.iter_mut()
+    }
+}
+
+impl Default for Events {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
 }

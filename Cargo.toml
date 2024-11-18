@@ -6,6 +6,9 @@ members = ["core", "glane", "widgets"]
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-description = "GUI library"
+description = "GUI layout library"
 repository = "https://github.com/btanno/glane"
 
+[profile.release-debug]
+inherits = "release"
+debug = 1
