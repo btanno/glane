@@ -17,6 +17,7 @@ pub struct Check {
 
 impl Check {
     #[inline]
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self { id: Id::new() }
     }

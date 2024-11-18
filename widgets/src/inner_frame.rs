@@ -72,7 +72,7 @@ impl Widget for InnerFrame {
                         let vbar = &mut self.vscroll;
                         let a = ctx.default_font.as_ref().map(|df| df.size).unwrap_or(1.0) as isize;
                         let d = a * ev.distance as isize;
-                        vbar.advance(d as isize);
+                        vbar.advance(d);
                         self.position.y = (self.position.y + d as f32)
                             .max(0.0)
                             .min(self.size.height - vbar.thumb.len as isize as f32);
@@ -97,16 +97,13 @@ impl Widget for InnerFrame {
             } else {
                 let layered_children = ctx.layout.iter().filter(|l| {
                     (l.handle().id() == child.id()
-                        || l.ancestors()
-                            .iter()
-                            .find(|a| a.id() == child.id())
-                            .is_some())
+                        || l.ancestors().iter().any(|a| a.id() == child.id()))
                         && l.layer() > layer
                 });
-                if layered_children.count() > 0 {
-                    if child.input(ctx, input, events) == ControlFlow::Break {
-                        return ControlFlow::Break;
-                    }
+                if layered_children.count() > 0
+                    && child.input(ctx, input, events) == ControlFlow::Break
+                {
+                    return ControlFlow::Break;
                 }
             }
         }

@@ -425,7 +425,7 @@ impl Layout {
     }
 
     pub(crate) fn new(_ctx: &Context, mut c: LayoutConstructor) -> Self {
-        c.v.sort_by(|a, b| a.layer().cmp(&b.layer()));
+        c.v.sort_by_key(|a| a.layer());
         Self { v: c.v }
     }
 
