@@ -39,7 +39,7 @@ pub struct ListBox {
     id: Id,
     style: Style,
     children: Vec<Child>,
-    vertical_bar: RefCell<VScrollBar>,
+    vscroll: RefCell<VScrollBar>,
     first_view_element: Cell<usize>,
     selected: Option<usize>,
     widget_state: WidgetState,
@@ -53,7 +53,7 @@ impl ListBox {
             id: Id::new(),
             style: Default::default(),
             children: vec![],
-            vertical_bar: RefCell::new(VScrollBar::new(0, 0)),
+            vscroll: RefCell::new(VScrollBar::new(0, 0)),
             first_view_element: Cell::new(0),
             selected: None,
             widget_state: WidgetState::None,
@@ -63,9 +63,9 @@ impl ListBox {
 
     #[inline]
     pub fn clear(&mut self) {
-        let mut vertical_bar = self.vertical_bar.borrow_mut();
-        vertical_bar.len = 0;
-        vertical_bar.thumb.len = 0;
+        let mut vscroll = self.vscroll.borrow_mut();
+        vscroll.len = 0;
+        vscroll.thumb.len = 0;
         self.first_view_element.set(0);
         self.selected = None;
         self.children.clear();
@@ -111,7 +111,7 @@ impl Widget for ListBox {
         let Some(area) = layout.find(|l| matches!(&**l, LayoutElement::StartClipping(_))) else {
             return ControlFlow::Continue;
         };
-        let Some(bar) = ctx.find_layout(&*self.vertical_bar.borrow()).next() else {
+        let Some(bar) = ctx.find_layout(&*self.vscroll.borrow()).next() else {
             return ControlFlow::Continue;
         };
         match input {
@@ -124,8 +124,8 @@ impl Widget for ListBox {
                     let mut i = self.first_view_element.get();
                     let mut height = 0.0;
                     while i < self.children.len() && height < area.rect().size().height {
-                        let element = &self.children[i];
-                        let element_rect = element.rect.get().map(|r| {
+                        let child = &self.children[i];
+                        let child_rect = child.rect.get().map(|r| {
                             LogicalRect::new(
                                 r.left,
                                 r.top,
@@ -133,13 +133,13 @@ impl Widget for ListBox {
                                 r.bottom,
                             )
                         });
-                        if element_rect.map_or(false, |r| r.contains(&m.mouse_state.position)) {
+                        if child_rect.map_or(false, |r| r.contains(&m.mouse_state.position)) {
                             events.push_message(self, Message::Selected(i));
                             self.selected = Some(i);
                             break;
                         }
                         i += 1;
-                        height += element.rect.get().map_or(0.0, |r| r.size().height);
+                        height += child_rect.map_or(0.0, |r| r.size().height);
                     }
                 }
             }
@@ -164,13 +164,13 @@ impl Widget for ListBox {
                 if area.rect().is_crossing(&m.mouse_state.position)
                     && m.axis == MouseWheelAxis::Vertical
                 {
-                    let mut vbar = self.vertical_bar.borrow_mut();
+                    let mut vbar = self.vscroll.borrow_mut();
                     vbar.advance(self.min_height.get() as isize * m.distance as isize);
                 }
             }
             _ => {}
         }
-        self.vertical_bar.borrow_mut().input(ctx, input, events)
+        self.vscroll.borrow_mut().input(ctx, input, events)
     }
 
     fn apply(&mut self, funcs: &mut ApplyFuncs) {
@@ -200,7 +200,7 @@ impl Widget for ListBox {
                 false,
             ),
         );
-        let current = self.vertical_bar.borrow().current() as f32;
+        let current = self.vscroll.borrow().current() as f32;
         let padding_rect = LogicalRect::new(
             lc.rect.left + self.style.padding.left,
             lc.rect.top + self.style.padding.top,
@@ -257,14 +257,14 @@ impl Widget for ListBox {
         }
         self.first_view_element.set(first_view_element.unwrap_or(0));
         {
-            let mut bar = self.vertical_bar.borrow_mut();
+            let mut bar = self.vscroll.borrow_mut();
             bar.thumb.len = (thumb_height.ceil()) as usize;
             bar.len = total_size.height.ceil() as usize;
         }
         {
-            let bar = self.vertical_bar.borrow();
-            let size = bar.size(&lc);
-            bar.layout(
+            let vscroll = self.vscroll.borrow();
+            let size = vscroll.size(&lc);
+            vscroll.layout(
                 lc.next(
                     self,
                     LogicalRect::new(
