@@ -57,6 +57,11 @@ impl Widget for Text {
                 WidgetState::None,
                 LogicalRect::from_position_size(lc.rect.left_top(), size),
                 &lc.ancestors,
+                self.style
+                    .font
+                    .as_ref()
+                    .or(lc.ctx.default_font.as_ref())
+                    .cloned(),
                 self.text.clone(),
                 lc.layer,
                 false,

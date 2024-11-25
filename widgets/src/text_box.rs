@@ -171,11 +171,14 @@ impl Widget for TextBox {
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
-        let font = self
+        let Some(font) = self
             .style
             .font
             .as_ref()
-            .unwrap_or_else(|| lc.ctx.default_font.as_ref().unwrap());
+            .or(lc.ctx.default_font.as_ref())
+        else {
+            return;
+        };
         let mut rect = LogicalRect::from_position_size(lc.rect.left_top(), size);
         let clipping_rect = rect;
         result.push(
@@ -208,6 +211,7 @@ impl Widget for TextBox {
                     self.widget_state,
                     rect,
                     &lc.ancestors,
+                    Some(font.clone()),
                     front_text,
                     lc.layer,
                     lc.selected,
@@ -239,6 +243,7 @@ impl Widget for TextBox {
                             self.widget_state,
                             rect,
                             &lc.ancestors,
+                            Some(font.clone()),
                             text,
                             clause.targeted,
                             lc.layer,
@@ -313,6 +318,7 @@ impl Widget for TextBox {
                     self.widget_state,
                     rect,
                     &lc.ancestors,
+                    Some(font.clone()),
                     back_text,
                     lc.layer,
                     lc.selected,

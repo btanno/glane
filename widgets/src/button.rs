@@ -119,6 +119,11 @@ impl Widget for Button {
                 self.widget_state,
                 rect,
                 &lc.ancestors,
+                self.style
+                    .font
+                    .as_ref()
+                    .or(lc.ctx.default_font.as_ref())
+                    .cloned(),
                 self.text.clone(),
                 lc.layer,
                 false,
