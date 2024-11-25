@@ -2,7 +2,7 @@ mod event;
 mod font;
 mod id;
 pub mod input;
-mod layout;
+pub mod layout;
 mod scene;
 mod widget;
 
