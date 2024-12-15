@@ -42,6 +42,10 @@ impl Widget for MaxSize {
         )
     }
 
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::fix()
+    }
+
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
         self.child.layout(

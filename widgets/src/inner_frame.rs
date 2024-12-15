@@ -1,31 +1,34 @@
 use super::*;
+use std::cell::RefCell;
 
 pub struct InnerFrame {
     id: Id,
-    viewport: LogicalSize<f32>,
     position: LogicalPosition<f32>,
     size: LogicalSize<f32>,
-    vscroll: VScrollBar,
-    hscroll: HScrollBar,
+    vscroll: RefCell<VScrollBar>,
+    hscroll: RefCell<HScrollBar>,
     children: Vec<Box<dyn Widget>>,
     entered: bool,
 }
 
 impl InnerFrame {
     #[inline]
-    pub fn new(viewport: impl Into<LogicalSize<f32>>, size: impl Into<LogicalSize<f32>>) -> Self {
-        let viewport = viewport.into();
+    pub fn new(size: impl Into<LogicalSize<f32>>) -> Self {
         let size = size.into();
         Self {
             id: Id::new(),
-            viewport,
             position: LogicalPosition::new(0.0, 0.0),
             size,
-            vscroll: VScrollBar::new(size.height.ceil() as usize, viewport.height.ceil() as usize),
-            hscroll: HScrollBar::new(size.width.ceil() as usize, viewport.width.ceil() as usize),
+            vscroll: RefCell::new(VScrollBar::new(size.height.ceil() as usize, 1)),
+            hscroll: RefCell::new(HScrollBar::new(size.width.ceil() as usize, 1)),
             children: vec![],
             entered: false,
         }
+    }
+
+    #[inline]
+    pub fn virtual_size(&self) -> LogicalSize<f32> {
+        self.size
     }
 }
 
@@ -39,7 +42,7 @@ impl Widget for InnerFrame {
     fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow {
         let area = ctx.find_layout(self).find_map(|l| l.as_area());
         let left = if let Some(area) = area {
-            let rc = LogicalRect::from_position_size(area.rect.left_top(), self.viewport);
+            let rc = area.rect;
             match input {
                 Input::MouseInput(ev) => {
                     if rc.contains(&ev.mouse_state.position) {
@@ -69,7 +72,7 @@ impl Widget for InnerFrame {
                 }
                 Input::MouseWheel(ev) => {
                     if self.entered || rc.contains(&ev.mouse_state.position) {
-                        let vbar = &mut self.vscroll;
+                        let mut vbar = self.vscroll.borrow_mut();
                         let a = ctx.default_font.as_ref().map(|df| df.size).unwrap_or(1.0) as isize;
                         let d = a * ev.distance as isize;
                         vbar.advance(d);
@@ -107,23 +110,26 @@ impl Widget for InnerFrame {
                 }
             }
         }
-        if self.vscroll.input(ctx, input, events) == ControlFlow::Break {
+        if self.vscroll.borrow_mut().input(ctx, input, events) == ControlFlow::Break {
             return ControlFlow::Break;
         }
-        if self.hscroll.input(ctx, input, events) == ControlFlow::Break {
+        if self.hscroll.borrow_mut().input(ctx, input, events) == ControlFlow::Break {
             return ControlFlow::Break;
         }
+        use std::ops::Deref;
+        let vscroll = self.vscroll.borrow();
+        let hscroll = self.hscroll.borrow();
         if let Some(vs) = events
             .iter()
             .rev()
-            .find_map(|event| event.message(&self.vscroll))
+            .find_map(|event| event.message(vscroll.deref()))
         {
             let scroll_bar::Message::Changed(ev) = vs;
             self.position.y = *ev as f32;
         } else if let Some(hs) = events
             .iter()
             .rev()
-            .find_map(|event| event.message(&self.hscroll))
+            .find_map(|event| event.message(hscroll.deref()))
         {
             let scroll_bar::Message::Changed(ev) = hs;
             self.position.x = *ev as f32;
@@ -133,29 +139,40 @@ impl Widget for InnerFrame {
 
     fn apply(&mut self, funcs: &mut ApplyFuncs) {
         funcs.apply(self);
-        self.vscroll.apply(funcs);
-        self.hscroll.apply(funcs);
+        self.vscroll.borrow_mut().apply(funcs);
+        self.hscroll.borrow_mut().apply(funcs);
         self.children
             .iter_mut()
             .for_each(|child| child.apply(funcs));
     }
 
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
-        let vs = self.vscroll.size(ctx);
-        let hs = self.hscroll.size(ctx);
-        LogicalSize::new(
-            self.viewport.width + vs.width,
-            self.viewport.height + hs.height,
-        )
+        ctx.rect.size()
+    }
+
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::flexible()
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
+        let viewport = {
+            let size = lc.rect.size();
+            let vs_size = self.vscroll.borrow().size(&lc);
+            let hs_size = self.hscroll.borrow().size(&lc);
+            LogicalSize::new(size.width - vs_size.width, size.height - hs_size.height)
+        };
+        {
+            let mut hscroll = self.hscroll.borrow_mut();
+            let mut vscroll = self.vscroll.borrow_mut();
+            hscroll.thumb.len = viewport.width.ceil() as usize;
+            vscroll.thumb.len = viewport.height.ceil() as usize;
+        }
         result.push(
             &lc,
             LayoutElement::area(
                 self,
                 WidgetState::None,
-                LogicalRect::from_position_size(lc.rect.left_top(), self.viewport),
+                LogicalRect::from_position_size(lc.rect.left_top(), viewport),
                 &lc.ancestors,
                 lc.layer,
                 false,
@@ -165,7 +182,7 @@ impl Widget for InnerFrame {
             &lc,
             LayoutElement::start_clipping(
                 self,
-                LogicalRect::from_position_size(lc.rect.left_top(), self.viewport),
+                LogicalRect::from_position_size(lc.rect.left_top(), viewport),
                 &lc.ancestors,
                 lc.layer,
             ),
@@ -192,7 +209,7 @@ impl Widget for InnerFrame {
                 );
             }
             position.y += size.height;
-            if position.y >= self.viewport.height {
+            if position.y >= viewport.height {
                 break;
             }
         }
@@ -200,37 +217,31 @@ impl Widget for InnerFrame {
             &lc,
             LayoutElement::end_clipping(
                 self,
-                LogicalRect::from_position_size(lc.rect.left_top(), self.viewport),
+                LogicalRect::from_position_size(lc.rect.left_top(), viewport),
                 &lc.ancestors,
                 lc.layer,
             ),
         );
-        let hscroll_size = self.hscroll.size(&lc.next(
+        let hscroll_size = self.hscroll.borrow().size(&lc.next(
+            self,
+            LogicalRect::from_position_size(lc.rect.left_top(), viewport),
+            lc.layer,
+            lc.selected,
+        ));
+        let vscroll_size = self.vscroll.borrow().size(&lc.next(
             self,
             LogicalRect::from_position_size(
                 lc.rect.left_top(),
-                LogicalSize::new(self.viewport.width, self.viewport.height),
+                LogicalSize::new(viewport.width, viewport.height + hscroll_size.height),
             ),
             lc.layer,
             lc.selected,
         ));
-        let vscroll_size = self.vscroll.size(&lc.next(
-            self,
-            LogicalRect::from_position_size(
-                lc.rect.left_top(),
-                LogicalSize::new(
-                    self.viewport.width,
-                    self.viewport.height + hscroll_size.height,
-                ),
-            ),
-            lc.layer,
-            lc.selected,
-        ));
-        self.vscroll.layout(
+        self.vscroll.borrow().layout(
             lc.next(
                 self,
                 LogicalRect::from_position_size(
-                    LogicalPosition::new(lc.rect.left + self.viewport.width, lc.rect.top),
+                    LogicalPosition::new(lc.rect.left + viewport.width, lc.rect.top),
                     vscroll_size,
                 ),
                 lc.layer,
@@ -238,11 +249,11 @@ impl Widget for InnerFrame {
             ),
             result,
         );
-        self.hscroll.layout(
+        self.hscroll.borrow().layout(
             lc.next(
                 self,
                 LogicalRect::from_position_size(
-                    LogicalPosition::new(lc.rect.left, lc.rect.top + self.viewport.height),
+                    LogicalPosition::new(lc.rect.left, lc.rect.top + viewport.height),
                     hscroll_size,
                 ),
                 lc.layer,

@@ -54,10 +54,7 @@ fn create_scene() -> glane::Scene {
     }
     let inner_frame = scene.push_child(
         &right,
-        glane::widgets::InnerFrame::new(
-            glane::LogicalSize::new(500.0, 256.0),
-            glane::LogicalSize::new(1920.0, 1024.0),
-        ),
+        glane::widgets::InnerFrame::new(glane::LogicalSize::new(1920.0, 1024.0)),
     );
     (0..28).for_each(|i| {
         let button = glane::widgets::Button::new(format!("Button{i}"));

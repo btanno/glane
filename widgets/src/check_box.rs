@@ -42,6 +42,10 @@ impl Widget for Check {
         LogicalSize::new(0.0, 0.0)
     }
 
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::fix()
+    }
+
     fn layout(&self, _lc: LayoutContext, _result: &mut LayoutConstructor) {}
 }
 
@@ -151,6 +155,10 @@ impl Widget for CheckBox {
             height + text_size.width + self.style.spacing,
             text_size.height,
         )
+    }
+
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::new(SizeType::Flexible, SizeType::Fix)
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {

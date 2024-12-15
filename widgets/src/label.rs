@@ -48,6 +48,10 @@ impl Widget for Label {
         LogicalSize::new(shape.right - shape.left, shape.bottom - shape.top)
     }
 
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::fix()
+    }
+
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
         result.push(

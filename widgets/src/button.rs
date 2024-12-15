@@ -92,6 +92,10 @@ impl Widget for Button {
         )
     }
 
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::fix()
+    }
+
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
         let rect = LogicalRect::from_position_size(lc.rect.left_top(), size);

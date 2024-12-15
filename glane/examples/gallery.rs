@@ -372,21 +372,17 @@ fn main() -> anyhow::Result<()> {
     let list_box = {
         let list_box = glane::widgets::ListBox::new();
         let handle = glane::Handle::new(&list_box);
-        scene.push_child(
-            &row_list_box,
-            glane::widgets::MaxSize::new(None, Some(200.0), list_box),
-        );
+        scene.push_child(&row_list_box, list_box);
         handle
     };
     for c in 'a'..='z' {
         scene.push_child(&list_box, glane::widgets::Text::new(c.to_string()));
     }
+    let row_inner_frame = scene.push_child(&right, glane::widgets::Row::new());
+    scene.push_child(&row_inner_frame, glane::widgets::Label::new("InnerFrame"));
     let inner_frame = scene.push_child(
-        &right,
-        glane::widgets::InnerFrame::new(
-            glane::LogicalSize::new(500.0, 256.0),
-            glane::LogicalSize::new(1920.0, 1024.0),
-        ),
+        &row_inner_frame,
+        glane::widgets::InnerFrame::new(glane::LogicalSize::new(1920.0, 1024.0)),
     );
     let inner_buttons = (0..28)
         .map(|i| {

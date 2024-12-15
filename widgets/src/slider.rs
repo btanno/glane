@@ -33,6 +33,10 @@ impl Widget for Knob {
         ctx.rect.size()
     }
 
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::fix()
+    }
+
     fn layout(&self, _lc: LayoutContext, _result: &mut LayoutConstructor) {}
 }
 
@@ -119,6 +123,10 @@ impl Widget for Slider {
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
         let size = ctx.rect.size();
         LogicalSize::new(size.width, self.height)
+    }
+
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::new(SizeType::Flexible, SizeType::Fix)
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {

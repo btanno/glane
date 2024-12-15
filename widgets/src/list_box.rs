@@ -184,6 +184,10 @@ impl Widget for ListBox {
         ctx.rect.size()
     }
 
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::flexible()
+    }
+
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         result.push(
             &lc,

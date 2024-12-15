@@ -45,36 +45,124 @@ impl Widget for Column {
 
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
         let mut size = LogicalSize::new(0.0f32, 0.0);
-        for child in self.children.iter() {
+        for (i, child) in self.children.iter().enumerate() {
+            if child.size_types().height != SizeType::Fix {
+                continue;
+            }
             let s = child.size(ctx);
             size.width = s.width.max(size.width);
             size.height += self.max_height.map_or(s.height, |mh| s.height.min(mh));
+            if i < self.children.len() - 1 {
+                size.height += self.space;
+            }
         }
+        let flexible_count = self
+            .children
+            .iter()
+            .filter(|child| child.size_types().height == SizeType::Flexible)
+            .count();
+        if flexible_count > 0 {
+            size.height += ctx.rect.size().height - size.height;
+            let last = self.children.last().unwrap();
+            size.height += self.space
+                * (flexible_count
+                    - if last.size_types().width == SizeType::Flexible {
+                        1
+                    } else {
+                        0
+                    }) as f32;
+        }
+        size.height = size.height.min(ctx.rect.size().height);
         size
+    }
+
+    fn size_types(&self) -> SizeTypes {
+        self.children
+            .iter()
+            .fold(SizeTypes::fix(), |r, child| SizeTypes {
+                width: if child.size_types().width == SizeType::Flexible {
+                    SizeType::Flexible
+                } else {
+                    r.width
+                },
+                height: if child.size_types().height == SizeType::Flexible {
+                    SizeType::Flexible
+                } else {
+                    r.height
+                },
+            })
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
         let mut rect = lc.rect;
-        for child in self.children.iter() {
-            let s = child.size(&lc);
-            let s = self
-                .max_height
-                .map_or(s, |mh| LogicalSize::new(s.width, s.height.min(mh)));
+        let mut sizes = Vec::with_capacity(self.children.len());
+        let mut max_width = 0.0f32;
+        let mut h = 0.0;
+        for (i, child) in self.children.iter().enumerate() {
+            if child.size_types().height == SizeType::Flexible {
+                h += self.space;
+                sizes.push(None);
+            } else {
+                let s = child.size(&lc);
+                max_width = max_width.max(s.width);
+                let height = self.max_height.map_or(s.height, |mh| s.height.min(mh));
+                if h + height <= size.height {
+                    sizes.push(Some(LogicalSize::new(s.width, height)));
+                    h += height;
+                    if i < self.children.len() - 1 {
+                        h += self.space;
+                    }
+                } else {
+                    let height = size.height - h;
+                    if height > 0.0 {
+                        sizes.push(Some(LogicalSize::new(s.width, height)));
+                    } else {
+                        sizes.push(None);
+                    }
+                }
+            }
+        }
+        let flexible_count = self
+            .children
+            .iter()
+            .filter(|child| child.size_types().height == SizeType::Flexible)
+            .count();
+        let flexible_height = if flexible_count > 0 {
+            (size.height - h) / flexible_count as f32
+        } else {
+            0.0
+        };
+        let flexible_height = self
+            .max_height
+            .map_or(flexible_height, |mh| mh.min(flexible_height));
+        for (i, child) in self.children.iter().enumerate() {
+            let s = match child.size_types().height {
+                SizeType::Flexible => {
+                    let size = child.size(&lc);
+                    let width = max_width.max(size.width);
+                    LogicalSize::new(width, flexible_height)
+                }
+                _ => {
+                    if let Some(size) = sizes[i] {
+                        size
+                    } else {
+                        continue;
+                    }
+                }
+            };
             child.layout(
                 lc.next(
                     self,
-                    LogicalRect::from_position_size(
-                        rect.left_top(),
-                        LogicalSize::new(size.width, s.height),
-                    ),
+                    LogicalRect::from_position_size(rect.left_top(), s),
                     lc.layer,
                     lc.selected,
                 ),
                 result,
             );
-            rect.top += s.height + self.space;
-            rect.bottom -= s.height + self.space;
+            if i < self.children.len() - 1 {
+                rect.top += s.height + self.space;
+            }
         }
     }
 }
