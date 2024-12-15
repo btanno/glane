@@ -122,16 +122,22 @@ impl Widget for DropdownBox {
     }
 
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
-        if let Some(selected) = self.list.selected_child() {
+        let mut size = if let Some(selected) = self.list.selected_child() {
             let size = selected.size(ctx);
-            (ctx.rect.size().width, size.height).into()
+            LogicalSize::new(ctx.rect.size().width, size.height)
         } else {
             let Some(font) = ctx.ctx.default_font.as_ref() else {
                 return (0.0, 0.0).into();
             };
             let size = font.global_bounding_size();
             LogicalSize::new(ctx.rect.size().width, size.height)
-        }
+        };
+        size.width = size.width.min(ctx.rect.size().width);
+        size
+    }
+
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::fix()
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {

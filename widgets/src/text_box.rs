@@ -169,14 +169,13 @@ impl Widget for TextBox {
         LogicalSize::new(width, height)
     }
 
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::new(SizeType::Flexible, SizeType::Fix)
+    }
+
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
-        let Some(font) = self
-            .style
-            .font
-            .as_ref()
-            .or(lc.ctx.default_font.as_ref())
-        else {
+        let Some(font) = self.style.font.as_ref().or(lc.ctx.default_font.as_ref()) else {
             return;
         };
         let mut rect = LogicalRect::from_position_size(lc.rect.left_top(), size);

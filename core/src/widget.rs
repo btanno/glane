@@ -7,10 +7,46 @@ pub enum ControlFlow {
     Continue,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum SizeType {
+    Fix,
+    Flexible,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct SizeTypes {
+    pub width: SizeType,
+    pub height: SizeType,
+}
+
+impl SizeTypes {
+    #[inline]
+    pub const fn new(width: SizeType, height: SizeType) -> Self {
+        Self { width, height }
+    }
+
+    #[inline]
+    pub const fn fix() -> Self {
+        Self {
+            width: SizeType::Fix,
+            height: SizeType::Fix,
+        }
+    }
+
+    #[inline]
+    pub const fn flexible() -> Self {
+        Self {
+            width: SizeType::Flexible,
+            height: SizeType::Flexible,
+        }
+    }
+}
+
 pub trait Widget: Any + HasId {
     fn input(&mut self, ctx: &Context, input: &Input, events: &mut Events) -> ControlFlow;
     fn apply(&mut self, funcs: &mut ApplyFuncs);
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32>;
+    fn size_types(&self) -> SizeTypes;
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor);
 }
 

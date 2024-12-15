@@ -48,6 +48,10 @@ where
         LogicalSize::new(0.0, 0.0)
     }
 
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::fix()
+    }
+
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         self.child.layout(
             lc.next(

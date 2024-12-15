@@ -54,6 +54,10 @@ impl Widget for VerticalPanes {
         ctx.rect.size()
     }
 
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::flexible()
+    }
+
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let left = LogicalRect::from_positions(
             lc.rect.left_top(),
@@ -110,6 +114,10 @@ impl Widget for HorizontalPanes {
 
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
         ctx.rect.size()
+    }
+
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::flexible()
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {

@@ -65,9 +65,15 @@ impl Widget for Thumb {
     }
 
     fn apply(&mut self, _funcs: &mut ApplyFuncs) {}
+
     fn size(&self, _ctx: &LayoutContext) -> LogicalSize<f32> {
         (0.0, 0.0).into()
     }
+
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::fix()
+    }
+
     fn layout(&self, _lc: LayoutContext, _result: &mut LayoutConstructor) {}
 }
 
@@ -183,6 +189,10 @@ impl Widget for ScrollBar<direction::Vertical> {
         LogicalSize::new(self.style.width, ctx.rect.bottom - ctx.rect.top)
     }
 
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::new(SizeType::Fix, SizeType::Flexible)
+    }
+
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
         let size = self.size(&lc);
         let thumb_size = LogicalSize::new(
@@ -285,6 +295,10 @@ impl Widget for ScrollBar<direction::Horizontal> {
 
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
         LogicalSize::new(ctx.rect.right - ctx.rect.left, self.style.width)
+    }
+
+    fn size_types(&self) -> SizeTypes {
+        SizeTypes::new(SizeType::Flexible, SizeType::Fix)
     }
 
     fn layout(&self, lc: LayoutContext, result: &mut LayoutConstructor) {
