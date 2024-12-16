@@ -154,17 +154,8 @@ impl Widget for TextBox {
             .chain(self.back_text.iter())
             .collect::<String>();
         let t = bounding_box_with_str(lc.ctx, font, &text);
-        let min_text = bounding_box_with_str(lc.ctx, font, "mmmmmmmmmm");
         let rect_size = lc.rect.size();
-        let width = t.size().width + self.style.padding.left + self.style.padding.right;
-        let min_width = min_text.size().width + self.style.padding.left + self.style.padding.right;
-        let width = if width > rect_size.width {
-            rect_size.width
-        } else if width > min_width {
-            width
-        } else {
-            min_width
-        };
+        let width = rect_size.width;
         let height = t.size().height + self.style.padding.top + self.style.padding.bottom;
         LogicalSize::new(width, height)
     }
