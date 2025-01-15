@@ -111,6 +111,7 @@ impl LayoutElement {
     }
 
     #[inline]
+    #[allow(clippy::too_many_arguments)]
     pub fn text(
         widget: &impl Widget,
         widget_state: WidgetState,
@@ -134,6 +135,7 @@ impl LayoutElement {
     }
 
     #[inline]
+    #[allow(clippy::too_many_arguments)]
     pub fn composition_text(
         widget: &impl Widget,
         widget_state: WidgetState,

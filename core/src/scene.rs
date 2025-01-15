@@ -24,8 +24,7 @@ impl Context {
 
     #[inline]
     pub fn has_focus<T: Widget>(&self, widget: &T) -> bool {
-        self.focus
-            .map_or(false, |focus| focus == Handle::new(widget))
+        self.focus.is_some_and(|focus| focus == Handle::new(widget))
     }
 }
 

@@ -97,11 +97,9 @@ fn input(bencher: divan::Bencher) {
 
 #[divan::bench]
 fn layout(bencher: divan::Bencher) {
-    bencher
-        .with_inputs(|| create_scene())
-        .bench_values(|mut scene| {
-            scene.layout();
-        });
+    bencher.with_inputs(create_scene).bench_values(|mut scene| {
+        scene.layout();
+    });
 }
 
 fn main() {
