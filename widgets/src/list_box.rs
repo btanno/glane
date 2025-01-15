@@ -133,7 +133,7 @@ impl Widget for ListBox {
                                 r.bottom,
                             )
                         });
-                        if child_rect.map_or(false, |r| r.contains(&m.mouse_state.position)) {
+                        if child_rect.is_some_and(|r| r.contains(&m.mouse_state.position)) {
                             events.push_message(self, Message::Selected(i));
                             self.selected = Some(i);
                             break;
@@ -225,7 +225,7 @@ impl Widget for ListBox {
                 (padding_rect.size().width, size.height),
             );
             if rect.is_crossing(&viewport) {
-                let selected = self.selected.map_or(false, |selected| selected == i);
+                let selected = self.selected == Some(i);
                 if selected {
                     result.push(
                         &lc,

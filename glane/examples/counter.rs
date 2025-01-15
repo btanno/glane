@@ -134,7 +134,7 @@ impl Canvas {
         self.ctx.draw(&self.render_target, |cmd| {
             cmd.clear((0.1, 0.1, 0.1, 0.0));
             for l in layout.iter() {
-                self.draw_element(&cmd, &l);
+                self.draw_element(&cmd, l);
             }
         })?;
         Ok(())

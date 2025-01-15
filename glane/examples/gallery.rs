@@ -297,7 +297,7 @@ impl Canvas {
         self.ctx.draw(&self.render_target, |cmd| {
             cmd.clear((0.0, 0.0, 0.3, 0.0));
             for l in layout.iter() {
-                self.draw_element(&cmd, &l);
+                self.draw_element(&cmd, l);
             }
         })?;
         Ok(())
@@ -524,11 +524,8 @@ fn main() -> anyhow::Result<()> {
                     println!("button clicked");
                 }
             } else if let Some(msg) = event.message(&text_box) {
-                match msg {
-                    glane::widgets::text_box::Message::Changed(s) => {
-                        println!("text_box changed: {s}");
-                    }
-                    _ => {}
+                if let glane::widgets::text_box::Message::Changed(s) = msg {
+                    println!("text_box changed: {s}");
                 }
             } else if let Some(msg) = event.message(&scroll_bar) {
                 match msg {
