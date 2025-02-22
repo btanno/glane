@@ -119,20 +119,28 @@ impl Widget for InnerFrame {
         use std::ops::Deref;
         let vscroll = self.vscroll.borrow();
         let hscroll = self.hscroll.borrow();
-        if let Some(vs) = events
+        match events
             .iter()
             .rev()
             .find_map(|event| event.message(vscroll.deref()))
         {
-            let scroll_bar::Message::Changed(ev) = vs;
-            self.position.y = *ev as f32;
-        } else if let Some(hs) = events
-            .iter()
-            .rev()
-            .find_map(|event| event.message(hscroll.deref()))
-        {
-            let scroll_bar::Message::Changed(ev) = hs;
-            self.position.x = *ev as f32;
+            Some(vs) => {
+                let scroll_bar::Message::Changed(ev) = vs;
+                self.position.y = *ev as f32;
+            }
+            _ => {
+                match events
+                    .iter()
+                    .rev()
+                    .find_map(|event| event.message(hscroll.deref()))
+                {
+                    Some(hs) => {
+                        let scroll_bar::Message::Changed(ev) = hs;
+                        self.position.x = *ev as f32;
+                    }
+                    _ => {}
+                }
+            }
         }
         ControlFlow::Continue
     }

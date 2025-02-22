@@ -179,16 +179,16 @@ mod bounding_box {
 
         pub fn get(&self, font: &Font, s: &str) -> LogicalRect<f32> {
             let mut elements = self.elements.lock().unwrap();
-            let element =
-                if let Some(element) = elements.iter_mut().find(|element| &element.font == font) {
-                    element
-                } else {
+            let element = match elements.iter_mut().find(|element| &element.font == font) {
+                Some(element) => element,
+                _ => {
                     elements.push(Element {
                         font: font.clone(),
                         rects: VecDeque::with_capacity(self.max_size),
                     });
                     elements.last_mut().unwrap()
-                };
+                }
+            };
             if let Some(index) = element.rects.iter().position(|(str, _rc)| str == s) {
                 let obj = element.rects.remove(index).unwrap();
                 let rect = obj.1;
