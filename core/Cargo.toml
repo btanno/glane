@@ -7,8 +7,8 @@ description.workspace = true
 repository.workspace = true
 
 [dependencies]
-gedv = { version = "0.2", features = ["serde"] }
+gedv = { version = "0.3", features = ["serde"] }
 sys-locale = "0.3"
-ttf-parser = "0.20"
+ttf-parser = "0.25"
 num.workspace = true
 rustybuzz.workspace = true
