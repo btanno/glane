@@ -97,14 +97,17 @@ impl Widget for DropdownBox {
         }
         if list_visiblity {
             self.list.input(ctx, input, events);
-            let ret = events.iter().enumerate().find_map(|(i, event)| {
-                if let Some(msg) = event.message(&self.list) {
-                    let list_box::Message::Selected(selected) = msg;
-                    Some((i, *selected))
-                } else {
-                    None
-                }
-            });
+            let ret =
+                events
+                    .iter()
+                    .enumerate()
+                    .find_map(|(i, event)| match event.message(&self.list) {
+                        Some(msg) => {
+                            let list_box::Message::Selected(selected) = msg;
+                            Some((i, *selected))
+                        }
+                        _ => None,
+                    });
             if let Some((i, selected)) = ret {
                 self.list_visiblity = false;
                 events.remove(i);
@@ -122,15 +125,18 @@ impl Widget for DropdownBox {
     }
 
     fn size(&self, ctx: &LayoutContext) -> LogicalSize<f32> {
-        let mut size = if let Some(selected) = self.list.selected_child() {
-            let size = selected.size(ctx);
-            LogicalSize::new(ctx.rect.size().width, size.height)
-        } else {
-            let Some(font) = ctx.ctx.default_font.as_ref() else {
-                return (0.0, 0.0).into();
-            };
-            let size = font.global_bounding_size();
-            LogicalSize::new(ctx.rect.size().width, size.height)
+        let mut size = match self.list.selected_child() {
+            Some(selected) => {
+                let size = selected.size(ctx);
+                LogicalSize::new(ctx.rect.size().width, size.height)
+            }
+            _ => {
+                let Some(font) = ctx.ctx.default_font.as_ref() else {
+                    return (0.0, 0.0).into();
+                };
+                let size = font.global_bounding_size();
+                LogicalSize::new(ctx.rect.size().width, size.height)
+            }
         };
         size.width = size.width.min(ctx.rect.size().width);
         size

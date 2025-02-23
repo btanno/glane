@@ -17,7 +17,7 @@ impl Context {
     pub fn find_layout<'a>(
         &'a self,
         widget: &dyn Widget,
-    ) -> impl Iterator<Item = &'a LayoutElement> {
+    ) -> impl Iterator<Item = &'a LayoutElement> + use<'a> {
         let id = widget.id();
         self.layout.iter().filter(move |l| l.handle().id() == id)
     }

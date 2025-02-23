@@ -170,7 +170,8 @@ impl Widget for ListBox {
             }
             _ => {}
         }
-        self.vscroll.borrow_mut().input(ctx, input, events)
+        let mut vscroll = self.vscroll.borrow_mut();
+        vscroll.input(ctx, input, events)
     }
 
     fn apply(&mut self, funcs: &mut ApplyFuncs) {
